@@ -1,6 +1,8 @@
 /// F1 22 ID and Type enum Definitions
 /// Provided by CodeMaster
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum TeamId {
     Mercedes = 0,
     Ferrari = 1,
@@ -57,6 +59,8 @@ pub enum TeamId {
     Trident22 = 128,
 }
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum DriverId {
     CarlosSainz = 0,
     DaniilKvyat = 1,
@@ -183,6 +187,7 @@ pub enum DriverId {
     JackDoohan = 136,
     AmauryCordeel = 137,
     MikaHakkinen = 138,
+    NetworkHuman = 255,
 }
 
 #[repr(i8)]
@@ -224,6 +229,8 @@ pub enum TrackId {
     Miami = 30,
 }
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum NationalityId {
     American = 1,
     Argentinean = 2,
@@ -343,7 +350,9 @@ pub enum RulesetId {
     RivalDuel = 11,
 }
 
-/// Type of contact each wheel is experiencing
+/// Type of contact a wheel is experiencing
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum SurfaceType {
     Tarmac = 0,
     RumbleStrip = 1,
@@ -359,10 +368,10 @@ pub enum SurfaceType {
     Ridged = 11,
 }
 
-/// Used in the telemetry packet to determine 
-/// if any buttons are being held on the controlling device. 
-/// 
-/// If the value below logical ANDed with the button 
+/// Used in the telemetry packet to determine
+/// if any buttons are being held on the controlling device.
+///
+/// If the value below logical ANDed with the button
 /// status is set then the corresponding button is being held.
 pub enum ButtonFlag {
     CrossorA = 0x00000001,
@@ -399,7 +408,8 @@ pub enum ButtonFlag {
     // UDPAction12 = 0x80000000,
 }
 
-#[repr(C)]
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum PenaltyType {
     DriveThrough = 0,
     StopGo = 1,
@@ -421,7 +431,8 @@ pub enum PenaltyType {
     BlackFlagTimer = 17,
 }
 
-#[repr(C)]
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum InfringementType {
     BlockingBySlowDriving = 0,
     BlockingByWrongWayDriving = 1,
