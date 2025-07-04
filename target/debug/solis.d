@@ -1,0 +1,1 @@
+C:\Users\ethan\Documents\Repositories\solis\target\debug\solis.exe: C:\Users\ethan\Documents\Repositories\solis\src\core\mod.rs C:\Users\ethan\Documents\Repositories\solis\src\core\packets.rs C:\Users\ethan\Documents\Repositories\solis\src\lib.rs C:\Users\ethan\Documents\Repositories\solis\src\main.rs

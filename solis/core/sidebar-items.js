@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TelemetryPacket"],"fn":["parse_packet"],"struct":["PacketCarDamageData","PacketCarSetupData","PacketCarStatusData","PacketCarTelemetryData","PacketEventData","PacketFinalClassificationData","PacketHeader","PacketLapData","PacketLobbyInfoData","PacketMotionData","PacketParticipantsData","PacketSessionData","PacketSessionHistoryData"]};
