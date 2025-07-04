@@ -525,7 +525,7 @@ pub enum WeatherType {
     Storm = 5,
 }
 
-#[repr(u16)]
+#[repr(u8)]
 #[derive(Debug, Default, Clone, Copy)]
 pub enum FormulaType {
     #[default]
@@ -540,7 +540,7 @@ pub enum FormulaType {
     F22021 = 7,
 }
 
-#[repr(u16)]
+#[repr(u8)]
 #[derive(Debug, Default, Clone, Copy)]
 pub enum SessionLength {
     #[default]

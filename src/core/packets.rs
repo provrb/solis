@@ -12,9 +12,8 @@
 ///   2   - Front Left (FL)
 ///   3   - Front Right (FR)
 use crate::core::{
-    ids::{SessionType, TrackId, WeatherType},
-    DriverId, FormulaType, InfringementType, NationalityId, PenaltyType, SessionLength,
-    SurfaceType, TeamId,
+    ids::{SessionType, TrackId, WeatherType, DriverId, FormulaType, InfringementType, NationalityId, PenaltyType, SessionLength,
+    SurfaceType, TeamId}
 };
 
 /// Every packet will have the following header.
@@ -67,12 +66,12 @@ struct CarMotionData {
     world_right_dir_x: i16,    // World space right X direction (normalised)
     world_right_dir_y: i16,    // World space right Y direction (normalised)
     world_right_dir_z: i16,    // World space right Z direction (normalised)
-    g_force_lateral: i16,      // Lateral G-Force component
-    g_force_longitudinal: i16, // Longitudinal G-Force component
-    g_force_vertical: i16,     // Vertical G-Force component
-    yaw: i16,                  // Yaw angle in radians
-    pitch: i16,                // Pitch angle in radians
-    roll: i16,                 // Roll angle in radians
+    g_force_lateral: f32,      // Lateral G-Force component
+    g_force_longitudinal: f32, // Longitudinal G-Force component
+    g_force_vertical: f32,     // Vertical G-Force component
+    yaw: f32,                  // Yaw angle in radians
+    pitch: f32,                // Pitch angle in radians
+    roll: f32,                 // Roll angle in radians
 }
 
 /// Physics data for all the cars being driven.
@@ -129,8 +128,8 @@ pub struct PacketSessionData {
     header: PacketHeader, // Header
 
     weather: WeatherType,
-    track_temperature: u8, // Track temp. in degrees celsius
-    air_temperature: u8,   // Air temp. in degrees celsius
+    track_temperature: i8, // Track temp. in degrees celsius
+    air_temperature: i8,   // Air temp. in degrees celsius
     total_laps: u8,        // Total number of laps in this race
     track_length: u16,     // Track length in metres
     session_type: SessionType,
@@ -256,8 +255,8 @@ struct SpeedTrap {
     is_overall_fastest_in_session: u8, // Overall fastest speed in session = 1, otherwise 0
     is_driver_fastest_in_session: u8, // Fastest speed for driver in session = 1, otherwise 0
     fastest_vehicle_idx_in_session: u8, // Vehicle index of the vehicle that is the fastest in this session
-    fastest_speed_in_session: f32, // Speed of the vehicle that is the fastest
-                                   // in this session
+    fastest_speed_in_session: f32,      // Speed of the vehicle that is the fastest
+                                        // in this session
 }
 
 #[repr(C, packed)]
@@ -348,7 +347,7 @@ struct ParticipantData {
     my_team: u8,                // My team flag – 1 = My Team, 0 = otherwise
     race_number: u8,            // Race number of the car
     nationality: NationalityId, // Nationality of the driver
-    name: [char; 48], // Name of participant in UTF-8 format – null terminated. Truncated with … (U+2026) if too long
+    name: [u8; 48], // Name of participant in UTF-8 format – null terminated. Truncated with … (U+2026) if too long
     your_telemetry: u8, // The player's UDP setting, 0 = restricted, 1 = public
 }
 
@@ -409,30 +408,30 @@ pub struct PacketCarSetupData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 struct CarTelemetryData {
-    speed: u16,                       // Speed of car in kilometres per hour
-    throttle: f32,                    // Amount of throttle applied (0.0 to 1.0)
-    steer: f32,                       // Steering (-1.0 (full lock left) to 1.0 (full lock right))
-    brake: f32,                       // Amount of brake applied (0.0 to 1.0)
-    clutch: u8,                       // Amount of clutch applied (0 to 100)
-    gear: i8,                         // Gear selected (1-8, N=0, R=-1)
-    engine_rpm: u16,                  // Engine RPM
-    drs: u8,                          // 0 = off, 1 = on
-    rev_lights_percent: u8,           // Rev lights indicator (percentage)
-    rev_lights_bit_value: u16,        // Rev lights (bit 0 = leftmost LED, bit 14 = rightmost LED)
-    brakes_temperature: [u16; 4],     // Brakes temperature (celsius)
+    speed: u16,                         // Speed of car in kilometres per hour
+    throttle: f32,                      // Amount of throttle applied (0.0 to 1.0)
+    steer: f32,                         // Steering (-1.0 (full lock left) to 1.0 (full lock right))
+    brake: f32,                         // Amount of brake applied (0.0 to 1.0)
+    clutch: u8,                         // Amount of clutch applied (0 to 100)
+    gear: i8,                           // Gear selected (1-8, N=0, R=-1)
+    engine_rpm: u16,                    // Engine RPM
+    drs: u8,                            // 0 = off, 1 = on
+    rev_lights_percent: u8,             // Rev lights indicator (percentage)
+    rev_lights_bit_value: u16,          // Rev lights (bit 0 = leftmost LED, bit 14 = rightmost LED)
+    brakes_temperature: [u16; 4],       // Brakes temperature (celsius)
     tyres_surface_temperature: [u8; 4], // Tyres surface temperature (celsius)
     tyres_inner_temperature: [u8; 4],   // Tyres inner temperature (celsius)
-    engine_temperature: u16,          // Engine temperature (celsius)
-    tyres_pressure: [f32; 4],         // Tyres pressure (PSI)
-    surface_type: [SurfaceType; 4],   // Driving surface, see appendices
+    engine_temperature: u16,            // Engine temperature (celsius)
+    tyres_pressure: [f32; 4],           // Tyres pressure (PSI)
+    surface_type: [SurfaceType; 4],     // Driving surface, see appendices
 }
 
-/// Telemetry for all the cars in the race. 
-/// 
-/// It details various values that would be recorded on the car such as 
-/// speed, throttle application, DRS etc. 
-/// 
-/// Note that the rev light configurations are presented 
+/// Telemetry for all the cars in the race.
+///
+/// It details various values that would be recorded on the car such as
+/// speed, throttle application, DRS etc.
+///
+/// Note that the rev light configurations are presented
 /// separately as well and will mimic real life driver preferences.
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
@@ -446,4 +445,182 @@ pub struct PacketCarTelemetryData {
     mfd_panel_index_secondary_player: u8, // See above
     suggested_gear: i8,                   // Suggested gear for the player (1-8)
                                           // 0 if no gear suggested
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+struct CarStatusData {
+    traction_control: u8,         // Traction control - 0 = off, 1 = medium, 2 = full
+    anti_lock_brakes: u8,         // 0 (off) - 1 (on)
+    fuel_mix: u8,                 // Fuel mix - 0 = lean, 1 = standard, 2 = rich, 3 = max
+    front_brake_bias: u8,         // Front brake bias (percentage)
+    pit_limiter_status: u8,       // Pit limiter status - 0 = off, 1 = on
+    fuel_in_tank: f32,            // Current fuel mass
+    fuel_capacity: f32,           // Fuel capacity
+    fuel_remaining_laps: f32,     // Fuel remaining in terms of laps (value on MFD)
+    max_rpm: u16,                 // Cars max RPM, point of rev limiter
+    idle_rpm: u16,                // Cars idle RPM
+    max_gears: u8,                // Maximum number of gears
+    drs_allowed: u8,              // 0 = not allowed, 1 = allowed
+    drs_activation_distance: u16, // 0 = DRS not available, non-zero - DRS will be available in [X] metres
+    actual_tyre_compound: u8,     // F1 Modern - 16 = C5, 17 = C4, 18 = C3, 19 = C2, 20 = C1
+    // 7 = inter, 8 = wet
+    // F1 Classic - 9 = dry, 10 = wet
+    // F2 – 11 = super soft, 12 = soft, 13 = medium, 14 = hard
+    // 15 = wet
+    visual_tyre_compound: u8, // F1 visual (can be different from actual compound)
+    // 16 = soft, 17 = medium, 18 = hard, 7 = inter, 8 = wet
+    // F1 Classic – same as above
+    // F2 ‘19, 15 = wet, 19 – super soft, 20 = soft
+    // 21 = medium , 22 = hard
+    tyres_age_laps: u8,    // Age in laps of the current set of tyres
+    vehicle_fia_flags: i8, // -1 = invalid/unknown, 0 = none, 1 = green
+    // 2 = blue, 3 = yellow, 4 = red
+    ers_store_energy: f32, // ERS energy store in Joules
+    ers_deploy_mode: u8,   // ERS deployment mode, 0 = none, 1 = medium
+    // 2 = hotlap, 3 = overtake
+    ers_harvested_this_lap_mguk: f32, // ERS energy harvested this lap by MGU-K
+    ers_harvested_this_lap_mguh: f32, // ERS energy harvested this lap by MGU-H
+    ers_deployed_this_lap: f32,       // ERS energy deployed this lap
+    network_paused: u8,               // Whether the car is paused in a network game
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct PacketCarStatusData {
+    header: PacketHeader, // Header
+    car_status_data: [CarStatusData; 22],
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+struct FinalClassificationData {
+    position: u8,      // Finishing position
+    num_laps: u8,      // Number of laps completed
+    grid_position: u8, // Grid position of the car
+    points: u8,        // Number of points scored
+    num_pit_stops: u8, // Number of pit stops made
+    result_status: u8, // Result status - 0 = invalid, 1 = inactive, 2 = active
+    // 3 = finished, 4 = didnotfinish, 5 = disqualified
+    // 6 = not classified, 7 = retired
+    best_lap_time_in_ms: u32, // Best lap time of the session in milliseconds
+    total_race_time: f64,     // Total race time in seconds without penalties
+    penalties_time: u8,       // Total penalties accumulated in seconds
+    num_penalties: u8,        // Number of penalties applied to this driver
+    num_tyre_stints: u8,      // Number of tyres stints up to maximum
+    tyre_stints_actual: [u8; 8], // Actual tyres used by this driver
+    tyre_stints_visual: [u8; 8], // Visual tyres used by this driver
+    tyre_stints_end_laps: [u8; 8], // The lap number stints end on
+}
+
+/// This packet details the final classification at the end of the race,
+/// and the data will match with the post race results screen.
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct PacketFinalClassificationData {
+    header: PacketHeader, // Header
+    num_cars: u8,         // Number of cars in the final classification
+    classification_data: [FinalClassificationData; 22],
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+struct LobbyInfoData {
+    ai_controlled: u8, // Whether the vehicle is AI (1) or Human (0) controlled
+    team_id: TeamId,   // Team id - see appendix (255 if no team currently selected)
+    nationality: NationalityId, // Nationality of the driver
+    name: [u8; 48],   // Name of participant in UTF-8 format – null terminated Truncated with ... (U+2026) if too long
+    car_number: u8,   // Car number of the player
+    ready_status: u8, // 0 = not ready, 1 = ready, 2 = spectating
+}
+
+/// This packet details the players currently in a multiplayer lobby.
+/// It details each player’s selected car,
+/// any AI involved in the game and also the ready status of each of the participants.
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct PacketLobbyInfoData {
+    header: PacketHeader,
+
+    // Packet specific data
+    num_players: u8, // Number of players in the lobby data
+    lobby_players: [LobbyInfoData; 22],
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+struct CarDamageData {
+    tyres_wear: [f32; 4],             // Tyre wear (percentage)
+    tyres_damage: [u8; 4],            // Tyre damage (percentage)
+    brakes_damage: [u8; 4],           // Brakes damage (percentage)
+    front_left_wing_damage: u8,       // Front left wing damage (percentage)
+    front_right_wing_damage: u8,      // Front right wing damage (percentage)
+    rear_wing_damage: u8,             // Rear wing damage (percentage)
+    floor_damage: u8,                 // Floor damage (percentage)
+    diffuser_damage: u8,              // Diffuser damage (percentage)
+    sidepod_damage: u8,               // Sidepod damage (percentage)
+    drs_fault: u8,                    // Indicator for DRS fault, 0 = OK, 1 = fault
+    ers_fault: u8,                    // Indicator for ERS fault, 0 = OK, 1 = fault
+    gear_box_damage: u8,              // Gear box damage (percentage)
+    engine_damage: u8,                // Engine damage (percentage)
+    engine_mguh_wear: u8,             // Engine wear MGU-H (percentage)
+    engine_es_wear: u8,               // Engine wear ES (percentage)
+    engine_ce_wear: u8,               // Engine wear CE (percentage)
+    engine_ice_wear: u8,              // Engine wear ICE (percentage)
+    engine_mguk_wear: u8,             // Engine wear MGU-K (percentage)
+    engine_tc_wear: u8,               // Engine wear TC (percentage)
+    engine_blown: u8,                 // Engine blown, 0 = OK, 1 = fault
+    engine_seized: u8,                // Engine seized, 0 = OK, 1 = fault
+}
+
+/// This packet details car damage parameters for all the cars in the race.
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct PacketCarDamageData {
+    header: PacketHeader,
+    car_damage_data: [CarDamageData; 22],
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+struct LapHistoryData {
+    lap_time_in_ms: u32,           // Lap time in milliseconds
+    sector1_time_in_ms: u16,       // Sector 1 time in milliseconds
+    sector2_time_in_ms: u16,       // Sector 2 time in milliseconds
+    sector3_time_in_ms: u16,       // Sector 3 time in milliseconds
+    lap_valid_bit_flags: u8,       // 0x01 bit set-lap valid, 0x02 bit set-sector 1 valid
+                                   // 0x04 bit set-sector 2 valid, 0x08 bit set-sector 3 valid
+}
+
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+struct TyreStintHistoryData {
+    end_lap: u8,                // Lap the tyre usage ends on (255 of current tyre)
+    tyre_actual_compound: u8,   // Actual tyres used by this driver
+    tyre_visual_compound: u8,   // Visual tyres used by this driver
+}
+
+/// This packet contains lap times and tyre usage for the session. 
+/// 
+/// This packet works slightly differently to other packets. 
+/// To reduce CPU and bandwidth, each packet relates to a specific vehicle and is sent every 1/20 s, 
+/// and the vehicle being sent is cycled through. 
+/// 
+/// Therefore in a 20 car race you should receive an update for each vehicle at least once per second.
+#[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
+pub struct PacketSessionHistoryData {
+    header: PacketHeader,                   // Header
+
+    car_idx: u8,                   // Index of the car this lap data relates to
+    num_laps: u8,                  // Num laps in the data (including current partial lap)
+    num_tyre_stints: u8,           // Number of tyre stints in the data
+
+    best_lap_time_lap_num: u8,     // Lap the best lap time was achieved on
+    best_sector1_lap_num: u8,      // Lap the best Sector 1 time was achieved on
+    best_sector2_lap_num: u8,      // Lap the best Sector 2 time was achieved on
+    best_sector3_lap_num: u8,      // Lap the best Sector 3 time was achieved on
+
+    lap_history_data: [LapHistoryData; 100],	    // 100 laps of data max
+    tyre_stints_history_data: [TyreStintHistoryData; 8],
 }
