@@ -11,43 +11,45 @@
 ///   1   - Rear Right (RR)
 ///   2   - Front Left (FL)
 ///   3   - Front Right (FR)
-use crate::core::{
-    ids::{SessionType, TrackId, WeatherType, DriverId, FormulaType, InfringementType, NationalityId, PenaltyType, SessionLength,
-    SurfaceType, TeamId}
+use crate::core::ids::{
+    DriverId, FormulaType, InfringementType, NationalityId, PenaltyType, SessionLength,
+    SessionType, SurfaceType, TeamId, TrackId, WeatherType,
 };
 
 /// Every packet will have the following header.
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct PacketHeader {
-    packet_format: u16,
-    game_major_version: u8,
-    game_minor_version: u8,
-    packet_version: u8,
+    pub packet_format: u16,
+    pub game_major_version: u8,
+    pub game_minor_version: u8,
+    pub packet_version: u8,
 
     /// Identifier for the packet type, see below
-    /// Packet Name          - Val - Description
-    /// Motion               -  0  - Contains all motion data for player’s car – only sent while player is in control
-    /// Session              -  1  - Data about the session – track, time left
-    /// Lap Data             -  2  - Data about all the lap times of cars in the session
-    /// Event                -  3  - Various notable events that happen during a session
-    /// Participants         -  4  - List of participants in the session, mostly relevant for multiplayer
-    /// Car Setups           -  5  - Packet detailing car setups for cars in the race
-    /// Car Telemetry        -  6  - Telemetry data for all cars
-    /// Car Status           -  7  - Status data for all cars
-    /// Final Classification -  8  - Final classification confirmation at the end of a race
-    /// Lobby Info           -  9  - Information about players in a multiplayer lobby
-    /// Car Damage           -  10 - Damage status for all cars
-    /// Session History      -  11 - Lap and tyre data for session
-    packet_id: u8,
-    session_uid: u64,
-    session_time: f32,
-    frame_identifier: u32,
-    player_car_index: u8,
+    ///
+    /// | Packet Name           | Val | Description                                                                                  |
+    /// |-----------------------|-----|----------------------------------------------------------------------------------------------|
+    /// | Motion                | 0   | Contains all motion data for player’s car – only sent while player is in control             |
+    /// | Session               | 1   | Data about the session – track, time left                                                    |
+    /// | Lap Data              | 2   | Data about all the lap times of cars in the session                                          |
+    /// | Event                 | 3   | Various notable events that happen during a session                                          |
+    /// | Participants          | 4   | List of participants in the session, mostly relevant for multiplayer                         |
+    /// | Car Setups            | 5   | Packet detailing car setups for cars in the race                                             |
+    /// | Car Telemetry         | 6   | Telemetry data for all cars                                                                  |
+    /// | Car Status            | 7   | Status data for all cars                                                                     |
+    /// | Final Classification  | 8   | Final classification confirmation at the end of a race                                       |
+    /// | Lobby Info            | 9   | Information about players in a multiplayer lobby                                             |
+    /// | Car Damage            | 10  | Damage status for all cars                                                                   |
+    /// | Session History       | 11  | Lap and tyre data for session                                                                |
+    pub packet_id: u8,
+    pub session_uid: u64,
+    pub session_time: f32,
+    pub frame_identifier: u32,
+    pub player_car_index: u8,
 
     /// Index of secondary player's car in the array (splitscreen)
     /// 255 if no second player
-    secondary_player_car_index: u8,
+    pub secondary_player_car_index: u8,
 }
 
 /// Physics data for a vehicle
@@ -79,7 +81,7 @@ struct CarMotionData {
 /// Includes additional data for the car being driven
 /// with the goal of being able to drive a motion platform setup.
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct PacketMotionData {
     header: PacketHeader,                 // Header
     car_motion_data: [CarMotionData; 22], // Data for all cars on track
@@ -203,7 +205,7 @@ struct LapData {
 
 /// The lap data packet gives details of all the cars in the session.
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct PacketLapData {
     header: PacketHeader,
     lap_data: [LapData; 22],      // Lap data for all cars on track
@@ -399,7 +401,7 @@ struct CarSetupData {
 /// Note that in multiplayer games, other player cars will appear as blank,
 /// you will only be able to see your car setup and AI cars.
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct PacketCarSetupData {
     header: PacketHeader,
     car_setups: [CarSetupData; 22],
@@ -526,11 +528,11 @@ pub struct PacketFinalClassificationData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 struct LobbyInfoData {
-    ai_controlled: u8, // Whether the vehicle is AI (1) or Human (0) controlled
-    team_id: TeamId,   // Team id - see appendix (255 if no team currently selected)
+    ai_controlled: u8,          // Whether the vehicle is AI (1) or Human (0) controlled
+    team_id: TeamId,            // Team id - see appendix (255 if no team currently selected)
     nationality: NationalityId, // Nationality of the driver
-    name: [u8; 48],   // Name of participant in UTF-8 format – null terminated Truncated with ... (U+2026) if too long
-    car_number: u8,   // Car number of the player
+    name: [u8; 48], // Name of participant in UTF-8 format – null terminated Truncated with ... (U+2026) if too long
+    car_number: u8, // Car number of the player
     ready_status: u8, // 0 = not ready, 1 = ready, 2 = spectating
 }
 
@@ -550,27 +552,27 @@ pub struct PacketLobbyInfoData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 struct CarDamageData {
-    tyres_wear: [f32; 4],             // Tyre wear (percentage)
-    tyres_damage: [u8; 4],            // Tyre damage (percentage)
-    brakes_damage: [u8; 4],           // Brakes damage (percentage)
-    front_left_wing_damage: u8,       // Front left wing damage (percentage)
-    front_right_wing_damage: u8,      // Front right wing damage (percentage)
-    rear_wing_damage: u8,             // Rear wing damage (percentage)
-    floor_damage: u8,                 // Floor damage (percentage)
-    diffuser_damage: u8,              // Diffuser damage (percentage)
-    sidepod_damage: u8,               // Sidepod damage (percentage)
-    drs_fault: u8,                    // Indicator for DRS fault, 0 = OK, 1 = fault
-    ers_fault: u8,                    // Indicator for ERS fault, 0 = OK, 1 = fault
-    gear_box_damage: u8,              // Gear box damage (percentage)
-    engine_damage: u8,                // Engine damage (percentage)
-    engine_mguh_wear: u8,             // Engine wear MGU-H (percentage)
-    engine_es_wear: u8,               // Engine wear ES (percentage)
-    engine_ce_wear: u8,               // Engine wear CE (percentage)
-    engine_ice_wear: u8,              // Engine wear ICE (percentage)
-    engine_mguk_wear: u8,             // Engine wear MGU-K (percentage)
-    engine_tc_wear: u8,               // Engine wear TC (percentage)
-    engine_blown: u8,                 // Engine blown, 0 = OK, 1 = fault
-    engine_seized: u8,                // Engine seized, 0 = OK, 1 = fault
+    tyres_wear: [f32; 4],        // Tyre wear (percentage)
+    tyres_damage: [u8; 4],       // Tyre damage (percentage)
+    brakes_damage: [u8; 4],      // Brakes damage (percentage)
+    front_left_wing_damage: u8,  // Front left wing damage (percentage)
+    front_right_wing_damage: u8, // Front right wing damage (percentage)
+    rear_wing_damage: u8,        // Rear wing damage (percentage)
+    floor_damage: u8,            // Floor damage (percentage)
+    diffuser_damage: u8,         // Diffuser damage (percentage)
+    sidepod_damage: u8,          // Sidepod damage (percentage)
+    drs_fault: u8,               // Indicator for DRS fault, 0 = OK, 1 = fault
+    ers_fault: u8,               // Indicator for ERS fault, 0 = OK, 1 = fault
+    gear_box_damage: u8,         // Gear box damage (percentage)
+    engine_damage: u8,           // Engine damage (percentage)
+    engine_mguh_wear: u8,        // Engine wear MGU-H (percentage)
+    engine_es_wear: u8,          // Engine wear ES (percentage)
+    engine_ce_wear: u8,          // Engine wear CE (percentage)
+    engine_ice_wear: u8,         // Engine wear ICE (percentage)
+    engine_mguk_wear: u8,        // Engine wear MGU-K (percentage)
+    engine_tc_wear: u8,          // Engine wear TC (percentage)
+    engine_blown: u8,            // Engine blown, 0 = OK, 1 = fault
+    engine_seized: u8,           // Engine seized, 0 = OK, 1 = fault
 }
 
 /// This packet details car damage parameters for all the cars in the race.
@@ -584,43 +586,43 @@ pub struct PacketCarDamageData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 struct LapHistoryData {
-    lap_time_in_ms: u32,           // Lap time in milliseconds
-    sector1_time_in_ms: u16,       // Sector 1 time in milliseconds
-    sector2_time_in_ms: u16,       // Sector 2 time in milliseconds
-    sector3_time_in_ms: u16,       // Sector 3 time in milliseconds
-    lap_valid_bit_flags: u8,       // 0x01 bit set-lap valid, 0x02 bit set-sector 1 valid
-                                   // 0x04 bit set-sector 2 valid, 0x08 bit set-sector 3 valid
+    lap_time_in_ms: u32,     // Lap time in milliseconds
+    sector1_time_in_ms: u16, // Sector 1 time in milliseconds
+    sector2_time_in_ms: u16, // Sector 2 time in milliseconds
+    sector3_time_in_ms: u16, // Sector 3 time in milliseconds
+    lap_valid_bit_flags: u8, // 0x01 bit set-lap valid, 0x02 bit set-sector 1 valid
+                             // 0x04 bit set-sector 2 valid, 0x08 bit set-sector 3 valid
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 struct TyreStintHistoryData {
-    end_lap: u8,                // Lap the tyre usage ends on (255 of current tyre)
-    tyre_actual_compound: u8,   // Actual tyres used by this driver
-    tyre_visual_compound: u8,   // Visual tyres used by this driver
+    end_lap: u8,              // Lap the tyre usage ends on (255 of current tyre)
+    tyre_actual_compound: u8, // Actual tyres used by this driver
+    tyre_visual_compound: u8, // Visual tyres used by this driver
 }
 
-/// This packet contains lap times and tyre usage for the session. 
-/// 
-/// This packet works slightly differently to other packets. 
-/// To reduce CPU and bandwidth, each packet relates to a specific vehicle and is sent every 1/20 s, 
-/// and the vehicle being sent is cycled through. 
-/// 
+/// This packet contains lap times and tyre usage for the session.
+///
+/// This packet works slightly differently to other packets.
+/// To reduce CPU and bandwidth, each packet relates to a specific vehicle and is sent every 1/20 s,
+/// and the vehicle being sent is cycled through.
+///
 /// Therefore in a 20 car race you should receive an update for each vehicle at least once per second.
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketSessionHistoryData {
-    header: PacketHeader,                   // Header
+    header: PacketHeader, // Header
 
-    car_idx: u8,                   // Index of the car this lap data relates to
-    num_laps: u8,                  // Num laps in the data (including current partial lap)
-    num_tyre_stints: u8,           // Number of tyre stints in the data
+    car_idx: u8,         // Index of the car this lap data relates to
+    num_laps: u8,        // Num laps in the data (including current partial lap)
+    num_tyre_stints: u8, // Number of tyre stints in the data
 
-    best_lap_time_lap_num: u8,     // Lap the best lap time was achieved on
-    best_sector1_lap_num: u8,      // Lap the best Sector 1 time was achieved on
-    best_sector2_lap_num: u8,      // Lap the best Sector 2 time was achieved on
-    best_sector3_lap_num: u8,      // Lap the best Sector 3 time was achieved on
+    best_lap_time_lap_num: u8, // Lap the best lap time was achieved on
+    best_sector1_lap_num: u8,  // Lap the best Sector 1 time was achieved on
+    best_sector2_lap_num: u8,  // Lap the best Sector 2 time was achieved on
+    best_sector3_lap_num: u8,  // Lap the best Sector 3 time was achieved on
 
-    lap_history_data: [LapHistoryData; 100],	    // 100 laps of data max
+    lap_history_data: [LapHistoryData; 100], // 100 laps of data max
     tyre_stints_history_data: [TyreStintHistoryData; 8],
 }
