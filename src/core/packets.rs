@@ -12,8 +12,7 @@
 ///   2   - Front Left (FL)
 ///   3   - Front Right (FR)
 use crate::core::ids::{
-    DriverId, FormulaType, InfringementType, NationalityId, PenaltyType, SessionLength,
-    SessionType, SurfaceType, TeamId, TrackId, WeatherType,
+    DriverId, FormulaType, GameModeId, InfringementType, NationalityId, PenaltyType, RulesetId, SessionLength, SessionType, SurfaceType, TeamId, TrackId, WeatherType
 };
 
 /// Every packet will have the following header.
@@ -83,25 +82,25 @@ struct CarMotionData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketMotionData {
-    header: PacketHeader,                 // Header
+    pub header: PacketHeader,             // Header
     car_motion_data: [CarMotionData; 22], // Data for all cars on track
 
     // Extra player car ONLY data
-    suspension_velocity: [f32; 4],     // RL, RR, FL, FR
-    suspension_acceleration: [f32; 4], // RL, RR, FL, FR
-    suspension_position: [f32; 4],     // RL, RR, FL, FR
-    wheel_speed: [f32; 4],             // Speed of each wheel
-    wheel_slip: [f32; 4],              // Slip ratio for each wheel
-    local_velocity_x: f32,             // Velocity in local space
-    local_velocity_y: f32,             // Velocity in local space
-    local_velocity_z: f32,             // Velocity in local space
-    angular_velocity_x: f32,           // Angular velocity x-component
-    angular_velocity_y: f32,           // Angular velocity y-component
-    angular_velocity_z: f32,           // Angular velocity z-component
-    angular_acceleration_x: f32,       // Angular velocity x-component
-    angular_acceleration_y: f32,       // Angular velocity y-component
-    angular_acceleration_z: f32,       // Angular velocity z-component
-    front_wheels_angle: f32,           // Current front wheels angle in radians
+    pub suspension_velocity: [f32; 4],     // RL, RR, FL, FR
+    pub suspension_acceleration: [f32; 4], // RL, RR, FL, FR
+    pub suspension_position: [f32; 4],     // RL, RR, FL, FR
+    pub wheel_speed: [f32; 4],             // Speed of each wheel
+    pub wheel_slip: [f32; 4],              // Slip ratio for each wheel
+    pub local_velocity_x: f32,             // Velocity in local space
+    pub local_velocity_y: f32,             // Velocity in local space
+    pub local_velocity_z: f32,             // Velocity in local space
+    pub angular_velocity_x: f32,           // Angular velocity x-component
+    pub angular_velocity_y: f32,           // Angular velocity y-component
+    pub angular_velocity_z: f32,           // Angular velocity z-component
+    pub angular_acceleration_x: f32,       // Angular velocity x-component
+    pub angular_acceleration_y: f32,       // Angular velocity y-component
+    pub angular_acceleration_z: f32,       // Angular velocity z-component
+    pub front_wheels_angle: f32,           // Current front wheels angle in radians
 }
 
 #[repr(C, packed)]
@@ -127,51 +126,50 @@ struct WeatherForecastSample {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketSessionData {
-    header: PacketHeader, // Header
-
-    weather: WeatherType,
-    track_temperature: i8, // Track temp. in degrees celsius
-    air_temperature: i8,   // Air temp. in degrees celsius
-    total_laps: u8,        // Total number of laps in this race
-    track_length: u16,     // Track length in metres
-    session_type: SessionType,
-    track_id: TrackId,
-    formula: FormulaType,
-    session_time_left: u16,           // Time left in session in seconds
-    session_duration: u16,            // Session duration in seconds
-    pit_speed_limit: u8,              // Pit speed limit in kilometres per hour
-    game_paused: u8,                  // Whether the game is paused – network game only
-    is_spectating: u8,                // Whether the player is spectating
-    spectator_car_index: u8,          // Index of the car being spectated
-    sli_pro_native_support: u8,       // SLI Pro support, 0 = inactive, 1 = active
-    num_marshal_zones: u8,            // Number of marshal zones to follow
+    pub header: PacketHeader, // Header
+    pub weather: WeatherType,
+    pub track_temperature: i8, // Track temp. in degrees celsius
+    pub air_temperature: i8,   // Air temp. in degrees celsius
+    pub total_laps: u8,        // Total number of laps in this race
+    pub track_length: u16,     // Track length in metres
+    pub session_type: SessionType,
+    pub track_id: TrackId,
+    pub formula: FormulaType,
+    pub session_time_left: u16,       // Time left in session in seconds
+    pub session_duration: u16,        // Session duration in seconds
+    pub pit_speed_limit: u8,          // Pit speed limit in kilometres per hour
+    pub game_paused: u8,              // Whether the game is paused – network game only
+    pub is_spectating: u8,            // Whether the player is spectating
+    pub spectator_car_index: u8,      // Index of the car being spectated
+    pub sli_pro_native_support: u8,   // SLI Pro support, 0 = inactive, 1 = active
+    pub num_marshal_zones: u8,        // Number of marshal zones to follow
     marshal_zones: [MarshalZone; 21], // List of marshal zones – max 21
-    safety_car_status: u8,            // 0 = no safety car, 1 = full
+    pub safety_car_status: u8,        // 0 = no safety car, 1 = full
     // 2 = virtual, 3 = formation lap
-    network_game: u8,                                      // 0 = offline, 1 = online
-    num_weather_forecast_samples: u8,                      // Number of weather samples to follow
+    pub network_game: u8,                 // 0 = offline, 1 = online
+    pub num_weather_forecast_samples: u8, // Number of weather samples to follow
     weather_forecast_samples: [WeatherForecastSample; 56], // Array of weather forecast samples
-    forecast_accuracy: u8,                                 // 0 = Perfect, 1 = Approximate
-    ai_difficulty: u8,                                     // AI Difficulty rating – 0-110
-    season_link_identifier: u32, // Identifier for season - persists across saves
-    weekend_link_identifier: u32, // Identifier for weekend - persists across saves
-    session_link_identifier: u32, // Identifier for session - persists across saves
-    pit_stop_window_ideal_lap: u8, // Ideal lap to pit on for current strategy (player)
-    pit_stop_window_latest_lap: u8, // Latest lap to pit on for current strategy (player)
-    pit_stop_rejoin_position: u8, // Predicted position to rejoin at (player)
-    steering_assist: u8,         // 0 = off, 1 = on
-    braking_assist: u8,          // 0 = off, 1 = low, 2 = medium, 3 = high
-    gearbox_assist: u8,          // 1 = manual, 2 = manual & suggested gear, 3 = auto
-    pit_assist: u8,              // 0 = off, 1 = on
-    pit_release_assist: u8,      // 0 = off, 1 = on
-    ers_assist: u8,              // 0 = off, 1 = on
-    drs_assist: u8,              // 0 = off, 1 = on
-    dynamic_racing_line: u8,     // 0 = off, 1 = corners only, 2 = full
-    dynamic_racing_line_type: u8, // 0 = 2D, 1 = 3D
-    game_mode: u8,               // Game mode id - see appendix
-    rule_set: u8,                // Ruleset - see appendix
-    time_of_day: u32,            // Local time of day - minutes since midnight
-    session_length: SessionLength,
+    pub forecast_accuracy: u8,            // 0 = Perfect, 1 = Approximate
+    pub ai_difficulty: u8,                // AI Difficulty rating – 0-110
+    pub season_link_identifier: u32,      // Identifier for season - persists across saves
+    pub weekend_link_identifier: u32,     // Identifier for weekend - persists across saves
+    pub session_link_identifier: u32,     // Identifier for session - persists across saves
+    pub pit_stop_window_ideal_lap: u8,    // Ideal lap to pit on for current strategy (player)
+    pub pit_stop_window_latest_lap: u8,   // Latest lap to pit on for current strategy (player)
+    pub pit_stop_rejoin_position: u8,     // Predicted position to rejoin at (player)
+    pub steering_assist: u8,              // 0 = off, 1 = on
+    pub braking_assist: u8,               // 0 = off, 1 = low, 2 = medium, 3 = high
+    pub gearbox_assist: u8,               // 1 = manual, 2 = manual & suggested gear, 3 = auto
+    pub pit_assist: u8,                   // 0 = off, 1 = on
+    pub pit_release_assist: u8,           // 0 = off, 1 = on
+    pub ers_assist: u8,                   // 0 = off, 1 = on
+    pub drs_assist: u8,                   // 0 = off, 1 = on
+    pub dynamic_racing_line: u8,          // 0 = off, 1 = corners only, 2 = full
+    pub dynamic_racing_line_type: u8,     // 0 = 2D, 1 = 3D
+    pub game_mode: GameModeId,            // Game mode id - see appendix
+    pub rule_set: RulesetId,              // Ruleset - see appendix
+    pub time_of_day: u32,                 // Local time of day - minutes since midnight
+    pub session_length: SessionLength,
 }
 
 #[repr(C, packed)]
@@ -207,10 +205,10 @@ struct LapData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketLapData {
-    header: PacketHeader,
-    lap_data: [LapData; 22],      // Lap data for all cars on track
-    time_trial_pb_car_idx: u8,    // Index of Personal Best car in time trial (255 if invalid)
-    time_trial_rival_car_idx: u8, // Index of Rival car in time trial (255 if invalid)
+    pub header: PacketHeader,
+    lap_data: [LapData; 22],          // Lap data for all cars on track
+    pub time_trial_pb_car_idx: u8,    // Index of Personal Best car in time trial (255 if invalid)
+    pub time_trial_rival_car_idx: u8, // Index of Rival car in time trial (255 if invalid)
 }
 
 #[repr(C, packed)]
@@ -313,7 +311,7 @@ union EventDataDetails {
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
 pub struct PacketEventData {
-    header: PacketHeader,
+    pub header: PacketHeader,
 
     /// Event string code - determines the type of event, see below
     ///         Event        -    Code    -          Description
@@ -334,11 +332,12 @@ pub struct PacketEventData {
     /// Stop go served       -   "SGSV"   -   Stop go penalty served
     /// Flashback            -   "FLBK"   -   Flashback activated
     /// Button status        -   "BUTN"   -   Button status changed
-    event_string_code: [u8; 4],
+    pub event_string_code: [u8; 4],
 
     event_details: EventDataDetails, // Event details - should be interpreted differently
                                      // for each type
 }
+
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 struct ParticipantData {
@@ -364,8 +363,8 @@ struct ParticipantData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketParticipantsData {
-    header: PacketHeader,
-    num_active_cars: u8, // Number of active cars in the data – should match number of cars on HUD
+    pub header: PacketHeader,
+    pub num_active_cars: u8, // Number of active cars in the data – should match number of cars on HUD
     participants: [ParticipantData; 22],
 }
 
@@ -403,7 +402,7 @@ struct CarSetupData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketCarSetupData {
-    header: PacketHeader,
+    pub header: PacketHeader,
     car_setups: [CarSetupData; 22],
 }
 
@@ -438,15 +437,15 @@ struct CarTelemetryData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketCarTelemetryData {
-    header: PacketHeader, // Header
+    pub header: PacketHeader, // Header
     car_telemetry_data: [CarTelemetryData; 22],
-    mfd_panel_index: u8, // Index of MFD panel open - 255 = MFD closed
+    pub mfd_panel_index: u8, // Index of MFD panel open - 255 = MFD closed
     // Single player, race – 0 = Car setup, 1 = Pits
     // 2 = Damage, 3 =  Engine, 4 = Temperatures
     // May vary depending on game mode
-    mfd_panel_index_secondary_player: u8, // See above
-    suggested_gear: i8,                   // Suggested gear for the player (1-8)
-                                          // 0 if no gear suggested
+    pub mfd_panel_index_secondary_player: u8, // See above
+    pub suggested_gear: i8,                   // Suggested gear for the player (1-8)
+                                              // 0 if no gear suggested
 }
 
 #[repr(C, packed)]
@@ -490,7 +489,7 @@ struct CarStatusData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketCarStatusData {
-    header: PacketHeader, // Header
+    pub header: PacketHeader, // Header
     car_status_data: [CarStatusData; 22],
 }
 
@@ -520,8 +519,8 @@ struct FinalClassificationData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketFinalClassificationData {
-    header: PacketHeader, // Header
-    num_cars: u8,         // Number of cars in the final classification
+    pub header: PacketHeader, // Header
+    pub num_cars: u8,         // Number of cars in the final classification
     classification_data: [FinalClassificationData; 22],
 }
 
@@ -542,10 +541,10 @@ struct LobbyInfoData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketLobbyInfoData {
-    header: PacketHeader,
+    pub header: PacketHeader,
 
     // Packet specific data
-    num_players: u8, // Number of players in the lobby data
+    pub num_players: u8, // Number of players in the lobby data
     lobby_players: [LobbyInfoData; 22],
 }
 
@@ -579,7 +578,7 @@ struct CarDamageData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketCarDamageData {
-    header: PacketHeader,
+    pub header: PacketHeader,
     car_damage_data: [CarDamageData; 22],
 }
 
@@ -612,17 +611,197 @@ struct TyreStintHistoryData {
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
 pub struct PacketSessionHistoryData {
-    header: PacketHeader, // Header
+    pub header: PacketHeader, // Header
 
-    car_idx: u8,         // Index of the car this lap data relates to
-    num_laps: u8,        // Num laps in the data (including current partial lap)
-    num_tyre_stints: u8, // Number of tyre stints in the data
+    pub car_idx: u8,         // Index of the car this lap data relates to
+    pub num_laps: u8,        // Num laps in the data (including current partial lap)
+    pub num_tyre_stints: u8, // Number of tyre stints in the data
 
-    best_lap_time_lap_num: u8, // Lap the best lap time was achieved on
-    best_sector1_lap_num: u8,  // Lap the best Sector 1 time was achieved on
-    best_sector2_lap_num: u8,  // Lap the best Sector 2 time was achieved on
-    best_sector3_lap_num: u8,  // Lap the best Sector 3 time was achieved on
+    pub best_lap_time_lap_num: u8, // Lap the best lap time was achieved on
+    pub best_sector1_lap_num: u8,  // Lap the best Sector 1 time was achieved on
+    pub best_sector2_lap_num: u8,  // Lap the best Sector 2 time was achieved on
+    pub best_sector3_lap_num: u8,  // Lap the best Sector 3 time was achieved on
 
     lap_history_data: [LapHistoryData; 100], // 100 laps of data max
     tyre_stints_history_data: [TyreStintHistoryData; 8],
+}
+
+/// A generic enum representing all possible F1 telemetry packet types
+#[derive(Clone, Copy)]
+pub enum TelemetryPacket {
+    Motion(PacketMotionData),
+    Session(PacketSessionData),
+    LapData(PacketLapData),
+    Event(PacketEventData),
+    Participants(PacketParticipantsData),
+    CarSetups(PacketCarSetupData),
+    CarTelemetry(PacketCarTelemetryData),
+    CarStatus(PacketCarStatusData),
+    FinalClassification(PacketFinalClassificationData),
+    LobbyInfo(PacketLobbyInfoData),
+    CarDamage(PacketCarDamageData),
+    SessionHistory(PacketSessionHistoryData),
+}
+
+impl TelemetryPacket {
+    /// View the PacketHeader portion of the packet
+    pub fn header(&self) -> &PacketHeader {
+        match self {
+            TelemetryPacket::Motion(packet) => &packet.header,
+            TelemetryPacket::Session(packet) => &packet.header,
+            TelemetryPacket::LapData(packet) => &packet.header,
+            TelemetryPacket::Event(packet) => &packet.header,
+            TelemetryPacket::Participants(packet) => &packet.header,
+            TelemetryPacket::CarSetups(packet) => &packet.header,
+            TelemetryPacket::CarTelemetry(packet) => &packet.header,
+            TelemetryPacket::CarStatus(packet) => &packet.header,
+            TelemetryPacket::FinalClassification(packet) => &packet.header,
+            TelemetryPacket::LobbyInfo(packet) => &packet.header,
+            TelemetryPacket::CarDamage(packet) => &packet.header,
+            TelemetryPacket::SessionHistory(packet) => &packet.header,
+        }
+    }
+
+    /// Get the name of the underlying packet type
+    pub fn name(&self) -> &'static str {
+        match self {
+            TelemetryPacket::Motion(_) => "Motion",
+            TelemetryPacket::Session(_) => "Session",
+            TelemetryPacket::LapData(_) => "Lap Data",
+            TelemetryPacket::Event(_) => "Event",
+            TelemetryPacket::Participants(_) => "Participants",
+            TelemetryPacket::CarSetups(_) => "Car Setups",
+            TelemetryPacket::CarTelemetry(_) => "Car Telemetry",
+            TelemetryPacket::CarStatus(_) => "Car Status",
+            TelemetryPacket::FinalClassification(_) => "Final Classification",
+            TelemetryPacket::LobbyInfo(_) => "Lobby Info",
+            TelemetryPacket::CarDamage(_) => "Car Damage",
+            TelemetryPacket::SessionHistory(_) => "Session History",
+        }
+    }
+
+    /// Get the type of the underlying packet.
+    ///
+    /// For valid packet ids/type see [`packet_id`](PacketHeader::packet_id)
+    pub fn packet_id(&self) -> u8 {
+        self.header().packet_id
+    }
+
+    /// Get the F1 CodeMasters format of the packet
+    ///
+    /// For example: 2022, 2021, 2020
+    pub fn format(&self) -> u16 {
+        self.header().packet_format
+    }
+
+    /// Get the unique identifier for the F1 session
+    pub fn session_uid(&self) -> u64 {
+        self.header().session_uid
+    }
+
+    /// Get the timestamp for the F1 session
+    pub fn session_time(&self) -> f32 {
+        self.header().session_time
+    }
+
+    /// Get the version of the underlying packet type, all start from 1
+    pub fn version(&self) -> u8 {
+        self.header().packet_version
+    }
+
+    pub fn as_motion(&self) -> Option<&PacketMotionData> {
+        if let TelemetryPacket::Motion(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_session(&self) -> Option<&PacketSessionData> {
+        if let TelemetryPacket::Session(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_lap_data(&self) -> Option<&PacketLapData> {
+        if let TelemetryPacket::LapData(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_event(&self) -> Option<&PacketEventData> {
+        if let TelemetryPacket::Event(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_participants(&self) -> Option<&PacketParticipantsData> {
+        if let TelemetryPacket::Participants(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_car_setups(&self) -> Option<&PacketCarSetupData> {
+        if let TelemetryPacket::CarSetups(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_car_telemetry(&self) -> Option<&PacketCarTelemetryData> {
+        if let TelemetryPacket::CarTelemetry(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_car_status(&self) -> Option<&PacketCarStatusData> {
+        if let TelemetryPacket::CarStatus(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_final_classification(&self) -> Option<&PacketFinalClassificationData> {
+        if let TelemetryPacket::FinalClassification(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_lobby_info(&self) -> Option<&PacketLobbyInfoData> {
+        if let TelemetryPacket::LobbyInfo(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_car_damage(&self) -> Option<&PacketCarDamageData> {
+        if let TelemetryPacket::CarDamage(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_session_history(&self) -> Option<&PacketSessionHistoryData> {
+        if let TelemetryPacket::SessionHistory(p) = self {
+            Some(p)
+        } else {
+            None
+        }
+    }
 }

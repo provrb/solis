@@ -57,6 +57,7 @@ pub enum TeamId {
     Campos22 = 126,
     VanAmersfoortRacing22 = 127,
     Trident22 = 128,
+    None = 255,
 }
 
 #[repr(u8)]
@@ -319,8 +320,11 @@ pub enum NationalityId {
     Barbadian = 85,
     Welsh = 86,
     Vietnamese = 87,
+    None = 255,
 }
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum GameModeId {
     EventMode = 0,
     GrandPrix = 3,
@@ -338,6 +342,8 @@ pub enum GameModeId {
     Benchmark = 127,
 }
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
 pub enum RulesetId {
     PracticeAndQualifying = 0,
     Race = 1,

@@ -1,26 +1,4 @@
-use crate::core::{
-    PacketCarDamageData, PacketCarSetupData, PacketCarStatusData, PacketCarTelemetryData,
-    PacketEventData, PacketFinalClassificationData, PacketHeader, PacketLapData,
-    PacketLobbyInfoData, PacketMotionData, PacketParticipantsData, PacketSessionData,
-    PacketSessionHistoryData,
-};
-
-/// A generic enum representing all possible F1 telemetry packet types
-#[derive(Clone, Copy)]
-pub enum TelemetryPacket {
-    Motion(PacketMotionData),
-    Session(PacketSessionData),
-    LapData(PacketLapData),
-    Event(PacketEventData),
-    Participants(PacketParticipantsData),
-    CarSetups(PacketCarSetupData),
-    CarTelemetry(PacketCarTelemetryData),
-    CarStatus(PacketCarStatusData),
-    FinalClassification(PacketFinalClassificationData),
-    LobbyInfo(PacketLobbyInfoData),
-    CarDamage(PacketCarDamageData),
-    SessionHistory(PacketSessionHistoryData),
-}
+use crate::core::{PacketHeader, TelemetryPacket};
 
 /// Attempt to create a TelemetryPacket from a buffer
 ///
