@@ -1,8 +1,9 @@
 /// F1 22 ID and Type enum Definitions
 /// Provided by CodeMaster
+use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum TeamId {
     Mercedes = 0,
     Ferrari = 1,
@@ -57,11 +58,13 @@ pub enum TeamId {
     Campos22 = 126,
     VanAmersfoortRacing22 = 127,
     Trident22 = 128,
+
+    #[default]
     None = 255,
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum DriverId {
     CarlosSainz = 0,
     DaniilKvyat = 1,
@@ -188,11 +191,13 @@ pub enum DriverId {
     JackDoohan = 136,
     AmauryCordeel = 137,
     MikaHakkinen = 138,
+
+    #[default]
     NetworkHuman = 255,
 }
 
 #[repr(i8)]
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum TrackId {
     #[default]
     Unknown = -1,
@@ -231,7 +236,7 @@ pub enum TrackId {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum NationalityId {
     American = 1,
     Argentinean = 2,
@@ -320,11 +325,13 @@ pub enum NationalityId {
     Barbadian = 85,
     Welsh = 86,
     Vietnamese = 87,
+
+    #[default]
     None = 255,
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum GameModeId {
     EventMode = 0,
     GrandPrix = 3,
@@ -343,7 +350,7 @@ pub enum GameModeId {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum RulesetId {
     PracticeAndQualifying = 0,
     Race = 1,
@@ -358,7 +365,7 @@ pub enum RulesetId {
 
 /// Type of contact a wheel is experiencing
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum SurfaceType {
     Tarmac = 0,
     RumbleStrip = 1,
@@ -379,6 +386,8 @@ pub enum SurfaceType {
 ///
 /// If the value below logical ANDed with the button
 /// status is set then the corresponding button is being held.
+#[repr(u32)]
+#[derive(Clone, Copy)]
 pub enum ButtonFlag {
     CrossorA = 0x00000001,
     TriangleorY = 0x00000002,
@@ -411,11 +420,39 @@ pub enum ButtonFlag {
     UDPAction9 = 0x10000000,
     UDPAction10 = 0x20000000,
     UDPAction11 = 0x40000000,
-    // UDPAction12 = 0x80000000,
+    UDPAction12 = 0x80000000,
+}
+
+impl ButtonFlag {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ButtonFlag::CrossorA => "Cross/A",
+            ButtonFlag::TriangleorY => "Triangle/Y",
+            ButtonFlag::CircleorB => "Circle/B",
+            ButtonFlag::SquareorX => "Square/X",
+            ButtonFlag::DpadLeft => "Dpad Left",
+            ButtonFlag::DpadRight => "Dpad Right",
+            ButtonFlag::DpadUp => "Dpad Up",
+            ButtonFlag::DpadDown => "Dpad Down",
+            ButtonFlag::OptionsorMenu => "Option/Menu",
+            ButtonFlag::L1orLB => "L1/LB",
+            ButtonFlag::R1orRB => "R1/RB",
+            ButtonFlag::L2orLT => "L2/LT",
+            ButtonFlag::R2orRT => "R2/RT",
+            ButtonFlag::LeftStickClick => "Left Stick Click",
+            ButtonFlag::RightStickClick => "Right Stick Click",
+            ButtonFlag::RightStickLeft => "Right Stick Left",
+            ButtonFlag::RightStickRight => "Right Stick Right",
+            ButtonFlag::RightStickUp => "Right Stick Up",
+            ButtonFlag::RightStickDown => "Right Stick Down",
+            ButtonFlag::Special => "Special",
+            _ => "UDP Action",
+        }
+    }
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PenaltyType {
     DriveThrough = 0,
     StopGo = 1,
@@ -435,6 +472,39 @@ pub enum PenaltyType {
     ThisAndPreviousLapInvalidatedWithoutReason = 15,
     Retired = 16,
     BlackFlagTimer = 17,
+}
+
+impl PenaltyType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            // All should flow with the sentence
+            // xxx has received a _
+            PenaltyType::DriveThrough => "Drive Through",
+            PenaltyType::StopGo => "Stop Go Penalty",
+            PenaltyType::GridPenalty => "Grid Penalty",
+            PenaltyType::PenaltyReminder => "Penalty Reminder",
+            PenaltyType::TimePenalty => "Time Penalty",
+            PenaltyType::Warning => "Warning",
+            PenaltyType::Disqualified => "Disqualification Penalty",
+            PenaltyType::RemovedFromFormationLap => "Formation Lap Removal",
+            PenaltyType::ParkedTooLongTimer => "Parked Too Long Penalty",
+            PenaltyType::TyreRegulations => "Tyre Regulation Penalty",
+            PenaltyType::ThisLapInvalidated => "Invalidated Lap (This Lap)",
+            PenaltyType::ThisAndNextLapInvalidated => "Invalidated Lap (This And Next Lap)",
+            PenaltyType::ThisLapInvalidatedWithoutReason => {
+                "Invalidated Lap Without Reason (This Lap)"
+            }
+            PenaltyType::ThisAndNextLapInvalidatedWithoutReason => {
+                "Invalidated Lap Without Reason (This And Next Lap)"
+            }
+            PenaltyType::ThisAndPreviousLapInvalidated => "Invalidated Lap (This And Previous Lap)",
+            PenaltyType::ThisAndPreviousLapInvalidatedWithoutReason => {
+                "Invalidated Lap Without Reason (This And Previous Lap)"
+            }
+            PenaltyType::Retired => "Retired",
+            PenaltyType::BlackFlagTimer => "Black Flag Penalty",
+        }
+    }
 }
 
 #[repr(u8)]
@@ -498,7 +568,7 @@ pub enum InfringementType {
 }
 
 #[repr(u8)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum SessionType {
     #[default]
     Unknown = 0,
@@ -519,7 +589,7 @@ pub enum SessionType {
 }
 
 #[repr(u8)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum WeatherType {
     #[default]
     Clear = 0,
@@ -532,7 +602,7 @@ pub enum WeatherType {
 }
 
 #[repr(u8)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum FormulaType {
     #[default]
     F1Modern = 0,
@@ -547,7 +617,7 @@ pub enum FormulaType {
 }
 
 #[repr(u8)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum SessionLength {
     #[default]
     None = 0,
@@ -558,4 +628,26 @@ pub enum SessionLength {
     MediumLong = 5,
     Long = 6,
     Full = 7,
+}
+
+#[repr(u8)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EventId {
+    SessionStarted,
+    SessionEnded,
+    FastestLap,
+    Retirement,
+    DRSEnabled,
+    DRSDisabled,
+    TeamMateInPits,
+    ChequeredFlag,
+    RaceWinner,
+    PenaltyIssued,
+    SpeedTrapTriggered,
+    StartLights,
+    LightsOut,
+    DriveThroughServed,
+    StopGoServed,
+    Flashback,
+    ButtonStatus,
 }

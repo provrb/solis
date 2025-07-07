@@ -1,3 +1,10 @@
+use crate::core::{
+    cm_events::{Event, CM_EVENTS},
+    ids::ButtonFlag,
+};
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
+
 /// F1 22 Packet Definitions
 /// Provided by CodeMaster
 ///
@@ -12,12 +19,13 @@
 ///   2   - Front Left (FL)
 ///   3   - Front Right (FR)
 use crate::core::ids::{
-    DriverId, FormulaType, GameModeId, InfringementType, NationalityId, PenaltyType, RulesetId, SessionLength, SessionType, SurfaceType, TeamId, TrackId, WeatherType
+    DriverId, FormulaType, GameModeId, InfringementType, NationalityId, PenaltyType, RulesetId,
+    SessionLength, SessionType, SurfaceType, TeamId, TrackId, WeatherType,
 };
 
 /// Every packet will have the following header.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub struct PacketHeader {
     pub packet_format: u16,
     pub game_major_version: u8,
@@ -53,7 +61,7 @@ pub struct PacketHeader {
 
 /// Physics data for a vehicle
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 struct CarMotionData {
     world_position_x: f32,     // World space X position
     world_position_y: f32,     // World space Y position
@@ -80,7 +88,7 @@ struct CarMotionData {
 /// Includes additional data for the car being driven
 /// with the goal of being able to drive a motion platform setup.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketMotionData {
     pub header: PacketHeader,             // Header
     car_motion_data: [CarMotionData; 22], // Data for all cars on track
@@ -104,15 +112,15 @@ pub struct PacketMotionData {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
-struct MarshalZone {
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
+pub struct MarshalZone {
     zone_start: f32, // Fraction (0..1) of way through the lap the marshal zone starts
     zone_flag: i8,   // -1 = invalid/unknown, 0 = none, 1 = green, 2 = blue, 3 = yellow, 4 = red
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
-struct WeatherForecastSample {
+#[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
+pub struct WeatherForecastSample {
     session_type: SessionType,
     time_offset: u8, // Time in minutes the forecast is for
     weather: WeatherType,
@@ -124,7 +132,8 @@ struct WeatherForecastSample {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketSessionData {
     pub header: PacketHeader, // Header
     pub weather: WeatherType,
@@ -135,19 +144,21 @@ pub struct PacketSessionData {
     pub session_type: SessionType,
     pub track_id: TrackId,
     pub formula: FormulaType,
-    pub session_time_left: u16,       // Time left in session in seconds
-    pub session_duration: u16,        // Session duration in seconds
-    pub pit_speed_limit: u8,          // Pit speed limit in kilometres per hour
-    pub game_paused: u8,              // Whether the game is paused – network game only
-    pub is_spectating: u8,            // Whether the player is spectating
-    pub spectator_car_index: u8,      // Index of the car being spectated
-    pub sli_pro_native_support: u8,   // SLI Pro support, 0 = inactive, 1 = active
-    pub num_marshal_zones: u8,        // Number of marshal zones to follow
+    pub session_time_left: u16,     // Time left in session in seconds
+    pub session_duration: u16,      // Session duration in seconds
+    pub pit_speed_limit: u8,        // Pit speed limit in kilometres per hour
+    pub game_paused: u8,            // Whether the game is paused – network game only
+    pub is_spectating: u8,          // Whether the player is spectating
+    pub spectator_car_index: u8,    // Index of the car being spectated
+    pub sli_pro_native_support: u8, // SLI Pro support, 0 = inactive, 1 = active
+    pub num_marshal_zones: u8,      // Number of marshal zones to follow
+    #[serde_as(as = "[_; 21]")]
     marshal_zones: [MarshalZone; 21], // List of marshal zones – max 21
-    pub safety_car_status: u8,        // 0 = no safety car, 1 = full
+    pub safety_car_status: u8,      // 0 = no safety car, 1 = full
     // 2 = virtual, 3 = formation lap
     pub network_game: u8,                 // 0 = offline, 1 = online
     pub num_weather_forecast_samples: u8, // Number of weather samples to follow
+    #[serde_as(as = "[_; 56]")]
     weather_forecast_samples: [WeatherForecastSample; 56], // Array of weather forecast samples
     pub forecast_accuracy: u8,            // 0 = Perfect, 1 = Approximate
     pub ai_difficulty: u8,                // AI Difficulty rating – 0-110
@@ -173,7 +184,7 @@ pub struct PacketSessionData {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct LapData {
     last_lap_time_in_ms: u32,            // Last lap time in milliseconds
     current_lap_time_in_ms: u32,         // Current time around the lap in milliseconds
@@ -203,7 +214,7 @@ struct LapData {
 
 /// The lap data packet gives details of all the cars in the session.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketLapData {
     pub header: PacketHeader,
     lap_data: [LapData; 22],          // Lap data for all cars on track
@@ -213,98 +224,135 @@ pub struct PacketLapData {
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct FastestLap {
-    vehicle_idx: u8, // Vehicle index of car achieving fastest lap
-    lap_time: f32,   // Lap time is in seconds
+pub struct FastestLap {
+    pub vehicle_idx: u8, // Vehicle index of car achieving fastest lap
+    pub lap_time: f32,   // Lap time is in seconds
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct Retirement {
-    vehicle_idx: u8, // Vehicle index of car retiring
+pub struct Retirement {
+    pub vehicle_idx: u8, // Vehicle index of car retiring
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct TeamMateInPits {
-    vehicle_idx: u8, // Vehicle index of team mate
+pub struct TeamMateInPits {
+    pub vehicle_idx: u8, // Vehicle index of team mate
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct RaceWinner {
-    vehicle_idx: u8, // Vehicle index of the race winner
+pub struct RaceWinner {
+    pub vehicle_idx: u8, // Vehicle index of the race winner
 }
+
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
-struct Penalty {
-    penalty_type: PenaltyType,           // Penalty type – see Appendices
-    infringement_type: InfringementType, // Infringement type – see Appendices
-    vehicle_idx: u8,                     // Vehicle index of the car the penalty is applied to
-    other_vehicle_idx: u8,               // Vehicle index of the other car involved
-    time: u8,                            // Time gained, or time spent doing action in seconds
-    lap_num: u8,                         // Lap the penalty occurred on
-    places_gained: u8,                   // Number of places gained by this
+pub struct Penalty {
+    pub penalty_type: PenaltyType, // Penalty type – see Appendices
+    pub infringement_type: InfringementType, // Infringement type – see Appendices
+    pub vehicle_idx: u8,           // Vehicle index of the car the penalty is applied to
+    pub other_vehicle_idx: u8,     // Vehicle index of the other car involved
+    pub time: u8,                  // Time gained, or time spent doing action in seconds
+    pub lap_num: u8,               // Lap the penalty occurred on
+    pub places_gained: u8,         // Number of places gained by this
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct SpeedTrap {
-    vehicle_idx: u8, // Vehicle index of the vehicle triggering speed trap
-    speed: f32,      // Top speed achieved in kilometres per hour
-    is_overall_fastest_in_session: u8, // Overall fastest speed in session = 1, otherwise 0
-    is_driver_fastest_in_session: u8, // Fastest speed for driver in session = 1, otherwise 0
-    fastest_vehicle_idx_in_session: u8, // Vehicle index of the vehicle that is the fastest in this session
-    fastest_speed_in_session: f32,      // Speed of the vehicle that is the fastest
-                                        // in this session
+pub struct SpeedTrap {
+    pub vehicle_idx: u8, // Vehicle index of the vehicle triggering speed trap
+    pub speed: f32,      // Top speed achieved in kilometres per hour
+    pub is_overall_fastest_in_session: u8, // Overall fastest speed in session = 1, otherwise 0
+    pub is_driver_fastest_in_session: u8, // Fastest speed for driver in session = 1, otherwise 0
+    pub fastest_vehicle_idx_in_session: u8, // Vehicle index of the vehicle that is the fastest in this session
+    pub fastest_speed_in_session: f32,      // Speed of the vehicle that is the fastest
+                                            // in this session
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct StartLights {
-    num_lights: u8, // Number of lights showing
+pub struct StartLights {
+    pub num_lights: u8, // Number of lights showing
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct DriveThroughPenaltyServed {
-    vehicle_idx: u8, // Vehicle index of the vehicle serving drive through
+pub struct DriveThroughPenaltyServed {
+    pub vehicle_idx: u8, // Vehicle index of the vehicle serving drive through
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct StopGoPenaltyServed {
-    vehicle_idx: u8, // Vehicle index of the vehicle serving stop go
+pub struct StopGoPenaltyServed {
+    pub vehicle_idx: u8, // Vehicle index of the vehicle serving stop go
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct Flashback {
-    flashback_frame_identifier: u32, // Frame identifier flashed back to
-    flashback_session_time: f32,     // Session time flashed back to
+pub struct Flashback {
+    pub flashback_frame_identifier: u32, // Frame identifier flashed back to
+    pub flashback_session_time: f32,     // Session time flashed back to
 }
 
 #[repr(C, packed)]
 #[derive(Debug, Default, Clone, Copy)]
-struct Buttons {
-    button_status: u32, // Bit flags specifying which buttons are being pressed
-                        // currently - see appendices
+pub struct Buttons {
+    pub button_status: u32, // Bit flags specifying which buttons are being pressed
+                            // currently - see appendices
+}
+
+impl Buttons {
+    pub fn get_pressed_buttons(&self) -> Vec<ButtonFlag> {
+        const ALL_BUTTONS: &[ButtonFlag] = &[
+            ButtonFlag::CircleorB,
+            ButtonFlag::CrossorA,
+            ButtonFlag::DpadDown,
+            ButtonFlag::DpadLeft,
+            ButtonFlag::DpadRight,
+            ButtonFlag::DpadUp,
+            ButtonFlag::L1orLB,
+            ButtonFlag::L2orLT,
+            ButtonFlag::LeftStickClick,
+            ButtonFlag::OptionsorMenu,
+            ButtonFlag::R1orRB,
+            ButtonFlag::R2orRT,
+            ButtonFlag::RightStickClick,
+            ButtonFlag::RightStickDown,
+            ButtonFlag::RightStickLeft,
+            ButtonFlag::RightStickRight,
+            ButtonFlag::RightStickUp,
+            ButtonFlag::Special,
+            ButtonFlag::SquareorX,
+            ButtonFlag::TriangleorY,
+        ];
+
+        // Iterate through each button and check if
+        // button_status AND button_flag is set.
+        // If set, button is being pressed.
+        ALL_BUTTONS
+            .iter()
+            .copied()
+            .filter(|&flag| (self.button_status & flag as u32) != 0)
+            .collect()
+    }
 }
 
 #[repr(C, packed)]
 #[derive(Clone, Copy)]
-union EventDataDetails {
-    fastest_lap: FastestLap,
-    retirement: Retirement,
-    teammate_in_pits: TeamMateInPits,
-    race_winner: RaceWinner,
-    penalty: Penalty,
-    speed_trap: SpeedTrap,
-    start_lights: StartLights,
-    drive_through_penalty_served: DriveThroughPenaltyServed,
-    stop_go_penalty_served: StopGoPenaltyServed,
-    flashback: Flashback,
-    buttons: Buttons,
+pub union EventDataDetails {
+    pub fastest_lap: FastestLap,
+    pub retirement: Retirement,
+    pub teammate_in_pits: TeamMateInPits,
+    pub race_winner: RaceWinner,
+    pub penalty: Penalty,
+    pub speed_trap: SpeedTrap,
+    pub start_lights: StartLights,
+    pub drive_through_penalty_served: DriveThroughPenaltyServed,
+    pub stop_go_penalty_served: StopGoPenaltyServed,
+    pub flashback: Flashback,
+    pub buttons: Buttons,
 }
 
 /// This packet gives details of events that happen during the course of a session.
@@ -334,22 +382,71 @@ pub struct PacketEventData {
     /// Button status        -   "BUTN"   -   Button status changed
     pub event_string_code: [u8; 4],
 
-    event_details: EventDataDetails, // Event details - should be interpreted differently
-                                     // for each type
+    pub event_details: EventDataDetails, // Event details - should be interpreted differently
+                                         // for each type
+}
+
+impl PacketEventData {
+    pub fn code_as_string(&self) -> String {
+        String::from_utf8_lossy(&self.event_string_code).to_string()
+    }
+
+    pub fn event_name(&self) -> String {
+        CM_EVENTS
+            .get(self.code_as_string().as_str())
+            .map(|event| event.event.to_string())
+            .unwrap_or_else(|| "Unknown".to_string())
+    }
+
+    pub fn event_description(&self) -> String {
+        CM_EVENTS
+            .get(self.code_as_string().as_str())
+            .map(|event| event.description.to_string())
+            .unwrap_or_else(|| "Unknown".to_string())
+    }
+
+    pub fn event(&self) -> Option<&Event> {
+        CM_EVENTS.get(self.code_as_string().as_str())
+    }
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
-struct ParticipantData {
-    ai_controlled: u8,   // Whether the vehicle is AI (1) or Human (0) controlled
-    driver_id: DriverId, // Driver id - see appendix, 255 if network human
-    network_id: u8,      // Network id – unique identifier for network players
-    team_id: TeamId,
-    my_team: u8,                // My team flag – 1 = My Team, 0 = otherwise
-    race_number: u8,            // Race number of the car
-    nationality: NationalityId, // Nationality of the driver
-    name: [u8; 48], // Name of participant in UTF-8 format – null terminated. Truncated with … (U+2026) if too long
-    your_telemetry: u8, // The player's UDP setting, 0 = restricted, 1 = public
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+pub struct ParticipantData {
+    pub ai_controlled: u8, // Whether the vehicle is AI (1) or Human (0) controlled
+    pub driver_id: DriverId, // Driver id - see appendix, 255 if network human
+    pub network_id: u8,    // Network id – unique identifier for network players
+    pub team_id: TeamId,
+    pub my_team: u8,                // My team flag – 1 = My Team, 0 = otherwise
+    pub race_number: u8,            // Race number of the car
+    pub nationality: NationalityId, // Nationality of the driver
+
+    #[serde_as(as = "[_; 48]")]
+    pub name: [u8; 48], // Name of participant in UTF-8 format – null terminated. Truncated with … (U+2026) if too long
+    pub your_telemetry: u8, // The player's UDP setting, 0 = restricted, 1 = public
+}
+
+impl Default for ParticipantData {
+    fn default() -> Self {
+        Self {
+            name: [0; 48],
+            ai_controlled: 0,
+            driver_id: DriverId::default(),
+            network_id: 0,
+            team_id: TeamId::default(),
+            my_team: 0,
+            race_number: 0,
+            nationality: NationalityId::default(),
+            your_telemetry: 0,
+        }
+    }
+}
+
+impl ParticipantData {
+    pub fn get_player_name(&self) -> String {
+        String::from_utf8_lossy(self.name.split(|&b| b == b'\0').nth(0).unwrap_or(&[])).to_string()
+    }
 }
 
 /// This is a list of participants in the race.
@@ -361,15 +458,21 @@ struct ParticipantData {
 ///
 /// The array should be indexed by vehicle index.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub struct PacketParticipantsData {
     pub header: PacketHeader,
     pub num_active_cars: u8, // Number of active cars in the data – should match number of cars on HUD
-    participants: [ParticipantData; 22],
+    pub participants: [ParticipantData; 22],
+}
+
+impl PacketParticipantsData {
+    pub fn get_participant(&self, vehicle_idx: u8) -> Option<&ParticipantData> {
+        self.participants.get(vehicle_idx as usize)
+    }
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct CarSetupData {
     front_wing: u8,                 // Front wing aero
     rear_wing: u8,                  // Rear wing aero
@@ -400,14 +503,14 @@ struct CarSetupData {
 /// Note that in multiplayer games, other player cars will appear as blank,
 /// you will only be able to see your car setup and AI cars.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketCarSetupData {
     pub header: PacketHeader,
     car_setups: [CarSetupData; 22],
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct CarTelemetryData {
     speed: u16,                         // Speed of car in kilometres per hour
     throttle: f32,                      // Amount of throttle applied (0.0 to 1.0)
@@ -435,7 +538,7 @@ struct CarTelemetryData {
 /// Note that the rev light configurations are presented
 /// separately as well and will mimic real life driver preferences.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketCarTelemetryData {
     pub header: PacketHeader, // Header
     car_telemetry_data: [CarTelemetryData; 22],
@@ -449,7 +552,7 @@ pub struct PacketCarTelemetryData {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct CarStatusData {
     traction_control: u8,         // Traction control - 0 = off, 1 = medium, 2 = full
     anti_lock_brakes: u8,         // 0 (off) - 1 (on)
@@ -487,14 +590,14 @@ struct CarStatusData {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketCarStatusData {
     pub header: PacketHeader, // Header
     car_status_data: [CarStatusData; 22],
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct FinalClassificationData {
     position: u8,      // Finishing position
     num_laps: u8,      // Number of laps completed
@@ -517,7 +620,7 @@ struct FinalClassificationData {
 /// This packet details the final classification at the end of the race,
 /// and the data will match with the post race results screen.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketFinalClassificationData {
     pub header: PacketHeader, // Header
     pub num_cars: u8,         // Number of cars in the final classification
@@ -525,13 +628,16 @@ pub struct PacketFinalClassificationData {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct LobbyInfoData {
     ai_controlled: u8,          // Whether the vehicle is AI (1) or Human (0) controlled
     team_id: TeamId,            // Team id - see appendix (255 if no team currently selected)
     nationality: NationalityId, // Nationality of the driver
+
+    #[serde_as(as = "[_; 48]")]
     name: [u8; 48], // Name of participant in UTF-8 format – null terminated Truncated with ... (U+2026) if too long
-    car_number: u8, // Car number of the player
+    car_number: u8,   // Car number of the player
     ready_status: u8, // 0 = not ready, 1 = ready, 2 = spectating
 }
 
@@ -539,7 +645,7 @@ struct LobbyInfoData {
 /// It details each player’s selected car,
 /// any AI involved in the game and also the ready status of each of the participants.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketLobbyInfoData {
     pub header: PacketHeader,
 
@@ -549,7 +655,7 @@ pub struct PacketLobbyInfoData {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct CarDamageData {
     tyres_wear: [f32; 4],        // Tyre wear (percentage)
     tyres_damage: [u8; 4],       // Tyre damage (percentage)
@@ -576,14 +682,14 @@ struct CarDamageData {
 
 /// This packet details car damage parameters for all the cars in the race.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketCarDamageData {
     pub header: PacketHeader,
     car_damage_data: [CarDamageData; 22],
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct LapHistoryData {
     lap_time_in_ms: u32,     // Lap time in milliseconds
     sector1_time_in_ms: u16, // Sector 1 time in milliseconds
@@ -594,7 +700,7 @@ struct LapHistoryData {
 }
 
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 struct TyreStintHistoryData {
     end_lap: u8,              // Lap the tyre usage ends on (255 of current tyre)
     tyre_actual_compound: u8, // Actual tyres used by this driver
@@ -609,7 +715,8 @@ struct TyreStintHistoryData {
 ///
 /// Therefore in a 20 car race you should receive an update for each vehicle at least once per second.
 #[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
+#[serde_as]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct PacketSessionHistoryData {
     pub header: PacketHeader, // Header
 
@@ -622,6 +729,7 @@ pub struct PacketSessionHistoryData {
     pub best_sector2_lap_num: u8,  // Lap the best Sector 2 time was achieved on
     pub best_sector3_lap_num: u8,  // Lap the best Sector 3 time was achieved on
 
+    #[serde_as(as = "[_; 100]")]
     lap_history_data: [LapHistoryData; 100], // 100 laps of data max
     tyre_stints_history_data: [TyreStintHistoryData; 8],
 }
