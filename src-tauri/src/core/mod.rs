@@ -1,6 +1,8 @@
+mod cm_events;
 mod decoder;
-mod ids;
 mod packets;
+
+pub mod ids;
 
 pub use decoder::*;
 pub use packets::*;
