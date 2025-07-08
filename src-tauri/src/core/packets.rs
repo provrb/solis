@@ -1,6 +1,9 @@
+use std::sync::MutexGuard;
+
 use crate::core::{
     cm_events::{Event, CM_EVENTS},
-    ids::ButtonFlag,
+    ids::{ButtonFlag, EventId, PacketType},
+    Session,
 };
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -48,7 +51,7 @@ pub struct PacketHeader {
     /// | Lobby Info            | 9   | Information about players in a multiplayer lobby                                             |
     /// | Car Damage            | 10  | Damage status for all cars                                                                   |
     /// | Session History       | 11  | Lap and tyre data for session                                                                |
-    pub packet_id: u8,
+    pub packet_id: PacketType,
     pub session_uid: u64,
     pub session_time: f32,
     pub frame_identifier: u32,
@@ -405,8 +408,168 @@ impl PacketEventData {
             .unwrap_or_else(|| "Unknown".to_string())
     }
 
-    pub fn event(&self) -> Option<&Event> {
+    pub fn event_reference(&self) -> Option<&Event> {
         CM_EVENTS.get(self.code_as_string().as_str())
+    }
+
+    pub fn event_message(&self, session: MutexGuard<'_, Session>) -> String {
+        let event_details = match self.event_reference() {
+            Some(e) => e,
+            None => return String::new(),
+        };
+
+        let data_details = self.event_details;
+        match event_details.id {
+            EventId::FastestLap => {
+                let fastest_lap = unsafe { data_details.fastest_lap };
+                let vehicle_idx = fastest_lap.vehicle_idx;
+                let lap_time = fastest_lap.lap_time;
+
+                if let Some(player) = session.get_player(vehicle_idx) {
+                    format!(
+                        "Fastest lap of {} seconds achieved by {}",
+                        lap_time,
+                        player.get_player_name()
+                    )
+                } else {
+                    format!("Fastest lap of {} seconds achieved", lap_time)
+                }
+            }
+            EventId::Retirement => {
+                let retirement = unsafe { data_details.retirement };
+                let vehicle_idx = retirement.vehicle_idx;
+
+                if let Some(player) = session.get_player(vehicle_idx) {
+                    format!("{} retired from the session", player.get_player_name())
+                } else {
+                    "A participant retired from the session".to_string()
+                }
+            }
+            EventId::TeamMateInPits => {
+                let pits = unsafe { data_details.teammate_in_pits };
+                let vehicle_idx = pits.vehicle_idx;
+
+                if let Some(player) = session.get_player(vehicle_idx) {
+                    format!(
+                        "Your teammate, {}, is in the pits.",
+                        player.get_player_name()
+                    )
+                } else {
+                    "Your teammate is in the pits".to_string()
+                }
+            }
+            EventId::RaceWinner => {
+                let race_winner = unsafe { data_details.race_winner };
+                let vehicle_idx = race_winner.vehicle_idx;
+
+                if let Some(player) = session.get_player(vehicle_idx) {
+                    format!("{} is the Race Winner!", player.get_player_name())
+                } else {
+                    event_details.description.to_string()
+                }
+            }
+            EventId::PenaltyIssued => {
+                let penalty = unsafe { data_details.penalty };
+                let prim_vehicle_idx = penalty.vehicle_idx;
+                let lap = penalty.lap_num;
+                let time = penalty.time;
+                let penalty_type = penalty.penalty_type;
+                let infringement = penalty.infringement_type;
+
+                if let Some(player) = session.get_player(prim_vehicle_idx) {
+                    if penalty_type == PenaltyType::Retired {
+                        format!(
+                            "{} has been retired from the session on lap {}.",
+                            player.get_player_name(),
+                            lap
+                        )
+                    } else {
+                        format!("{} has received a {} on lap {}. Infringment type: {:?}. Time: {} seconds", player.get_player_name(), penalty_type.as_str(),  lap, infringement, time)
+                    }
+                } else {
+                    event_details.description.to_string()
+                }
+            }
+            EventId::SpeedTrapTriggered => {
+                let speed_trap = unsafe { data_details.speed_trap };
+                let vehicle_idx = speed_trap.vehicle_idx;
+                let speed = speed_trap.speed;
+                let max_speed = speed_trap.fastest_speed_in_session;
+
+                if let Some(player) = session.get_player(vehicle_idx) {
+                    if speed_trap.is_overall_fastest_in_session == 1 {
+                        format!(
+                            "Speed trap hit - {} hit the fastest speed in the session: {} kmh",
+                            player.get_player_name(),
+                            speed
+                        )
+                    } else if speed_trap.is_driver_fastest_in_session == 1 {
+                        format!(
+                            "Speed trap hit - {} hit their fastest speed in the session: {} kmh",
+                            player.get_player_name(),
+                            speed
+                        )
+                    } else {
+                        format!(
+                            "Speed trap hit - {} hit {} kmh. Max: {} kmh",
+                            player.get_player_name(),
+                            speed,
+                            max_speed
+                        )
+                    }
+                } else {
+                    format!("Speed trap hit at {} kmh. Max: {} kmh", speed, max_speed)
+                }
+            }
+            EventId::StartLights => {
+                let start_lights = unsafe { data_details.start_lights };
+                let num = start_lights.num_lights;
+                format!("{} start lights showing", num)
+            }
+            EventId::DriveThroughServed => {
+                let drive = unsafe { data_details.drive_through_penalty_served };
+                let vehicle_idx = drive.vehicle_idx;
+                if let Some(player) = session.get_player(vehicle_idx) {
+                    format!(
+                        "{} served their drive through penalty",
+                        player.get_player_name()
+                    )
+                } else {
+                    event_details.description.to_string()
+                }
+            }
+            EventId::StopGoServed => {
+                let stop_go = unsafe { data_details.stop_go_penalty_served };
+                let vehicle_idx = stop_go.vehicle_idx;
+                if let Some(player) = session.get_player(vehicle_idx) {
+                    format!("{} served their stop-go penalty", player.get_player_name())
+                } else {
+                    event_details.description.to_string()
+                }
+            }
+            EventId::Flashback => {
+                let flashback = unsafe { data_details.flashback };
+                let session_time = flashback.flashback_session_time;
+                format!("Flashback at {} seconds (session time)", session_time)
+            }
+            EventId::ButtonStatus => {
+                let buttons = unsafe { data_details.buttons };
+                let pressed = buttons.get_pressed_buttons();
+                if pressed.is_empty() {
+                    return String::new();
+                }
+
+                format!(
+                    "Button pressed. Pressed buttons: {}",
+                    pressed
+                        .iter()
+                        .map(|button| button.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+            }
+            _ => event_details.description.to_string(),
+        }
     }
 }
 
@@ -791,7 +954,7 @@ impl TelemetryPacket {
     /// Get the type of the underlying packet.
     ///
     /// For valid packet ids/type see [`packet_id`](PacketHeader::packet_id)
-    pub fn packet_id(&self) -> u8 {
+    pub fn packet_id(&self) -> PacketType {
         self.header().packet_id
     }
 

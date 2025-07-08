@@ -1,4 +1,4 @@
-use crate::core::{PacketHeader, TelemetryPacket};
+use crate::core::{ids::PacketType, PacketHeader, TelemetryPacket};
 
 /// Attempt to create a TelemetryPacket from a buffer
 ///
@@ -27,20 +27,40 @@ pub fn parse_packet(buffer: &[u8]) -> Option<TelemetryPacket> {
     // Based on packet id, cast to a specific structure for
     // respective, relevant data
     let packet = match header.packet_id {
-        0 => TelemetryPacket::Motion(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        1 => TelemetryPacket::Session(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        2 => TelemetryPacket::LapData(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        3 => TelemetryPacket::Event(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        4 => TelemetryPacket::Participants(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        5 => TelemetryPacket::CarSetups(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        6 => TelemetryPacket::CarTelemetry(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        7 => TelemetryPacket::CarStatus(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        8 => TelemetryPacket::FinalClassification(unsafe {
+        PacketType::Motion => {
+            TelemetryPacket::Motion(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::Session => {
+            TelemetryPacket::Session(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::LapData => {
+            TelemetryPacket::LapData(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::Event => {
+            TelemetryPacket::Event(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::Participants => {
+            TelemetryPacket::Participants(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::CarSetups => {
+            TelemetryPacket::CarSetups(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::CarTelemetry => {
+            TelemetryPacket::CarTelemetry(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::CarStatus => {
+            TelemetryPacket::CarStatus(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::FinalClassification => TelemetryPacket::FinalClassification(unsafe {
             std::ptr::read(buffer.as_ptr() as *const _)
         }),
-        9 => TelemetryPacket::LobbyInfo(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        10 => TelemetryPacket::CarDamage(unsafe { std::ptr::read(buffer.as_ptr() as *const _) }),
-        11 => {
+        PacketType::LobbyInfo => {
+            TelemetryPacket::LobbyInfo(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::CarDamage => {
+            TelemetryPacket::CarDamage(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
+        }
+        PacketType::SessionHistory => {
             TelemetryPacket::SessionHistory(unsafe { std::ptr::read(buffer.as_ptr() as *const _) })
         }
         _ => return None,
