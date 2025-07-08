@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { emit } from "@tauri-apps/api/event";
 
 // Custom Dropdown Component
 interface CustomDropdownProps {
@@ -71,11 +72,10 @@ function CustomDropdown({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors duration-150 font-montserrat ${
-                option.value === value
+              className={`w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors duration-150 font-montserrat ${option.value === value
                   ? "bg-blue-50 text-blue-600"
                   : "text-slate-700"
-              }`}
+                }`}
             >
               {option.label}
             </button>
@@ -93,6 +93,7 @@ function ConnectionPanel({
   const [udpServer, setUdpServer] = useState("127.0.0.1");
   const [udpPort, setUdpPort] = useState("20777");
   const [packetFormat, setPacketFormat] = useState("2022");
+  const [connecting, setConnecting] = useState(false);
 
   // Packet format options
   const packetFormatOptions = [
@@ -103,18 +104,23 @@ function ConnectionPanel({
   ];
 
   const handleConnect = () => {
+    setConnecting(true);
+
     invoke("start_udp_listener", { address: udpServer, port: udpPort })
       .then((result) => {
         setIsConnected(Boolean(result));
-        console.log("connected", isConnected);
+        console.log("connected", Boolean(result));
       })
       .catch(() => {
         setIsConnected(false);
+      })
+      .finally(() => {
+        setConnecting(false);
       });
   };
 
   const handleDisconnect = () => {
-    invoke("stop_udp_listener");
+    emit("stop_udp_listener");
     setIsConnected(false);
   };
 
@@ -185,23 +191,22 @@ function ConnectionPanel({
         <div className="flex space-x-3 pt-2">
           <button
             onClick={handleConnect}
-            disabled={isConnected}
-            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${
-              isConnected
+            disabled={isConnected || connecting}
+            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${isConnected || connecting
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-black text-white hover:bg-gray-800"
-            }`}
+              }`}
           >
             Connect
           </button>
+
           <button
             onClick={handleDisconnect}
-            disabled={!isConnected}
-            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${
-              !isConnected
+            disabled={!isConnected || connecting}
+            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${!isConnected || connecting
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-black text-white hover:bg-gray-800"
-            }`}
+              }`}
           >
             Disconnect
           </button>

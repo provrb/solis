@@ -3,6 +3,46 @@
 use serde::{Deserialize, Serialize};
 
 #[repr(u8)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+pub enum PacketType {
+    Motion = 0,
+    Session = 1,
+    LapData = 2,
+    Event = 3,
+    Participants = 4,
+    CarSetups = 5,
+    CarTelemetry = 6,
+    CarStatus = 7,
+    FinalClassification = 8,
+    LobbyInfo = 9,
+    CarDamage = 10,
+    SessionHistory = 11,
+
+    #[default]
+    None = 255,
+}
+
+impl PacketType {
+    pub fn as_u8(&self) -> u8 {
+        match self {
+            PacketType::Motion => 0,
+            PacketType::Session => 1,
+            PacketType::LapData => 2,
+            PacketType::Event => 3,
+            PacketType::Participants => 4,
+            PacketType::CarSetups => 5,
+            PacketType::CarTelemetry => 6,
+            PacketType::CarStatus => 7,
+            PacketType::FinalClassification => 8,
+            PacketType::LobbyInfo => 9,
+            PacketType::CarDamage => 10,
+            PacketType::SessionHistory => 11,
+            PacketType::None => 255,
+        }
+    }
+}
+
+#[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum TeamId {
     Mercedes = 0,
