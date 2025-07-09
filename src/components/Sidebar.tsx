@@ -13,6 +13,7 @@ import {
   GalleryVerticalEnd,
   Infinity,
   MonitorUp,
+  Headset
 } from "lucide-react";
 
 interface SidebarItem {
@@ -35,6 +36,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
 
   const sidebarItems: SidebarItem[] = [
     { icon: <MonitorUp size={20} />, label: "Connection" },
+    { icon: <Headset size={20} />, label: "Audio" },
     { icon: <Move3d size={20} />, label: "Motion Data" },
     { icon: <Clock size={20} />, label: "Session Data" },
     { icon: <Infinity size={20} />, label: "Lap Data" },
@@ -89,7 +91,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         style={{ scrollBehavior: "smooth" }}
       >
         {/* Group 1: Connection */}
-        {sidebarItems.slice(0, 1).map((item, index) => (
+        {sidebarItems.slice(0, 2).map((item, index) => (
           <button
             key={index}
             onClick={() => handleItemClick(item.label)}
@@ -112,7 +114,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         <div className="h-px bg-slate-200 my-4"></div>
 
         {/* Group 2: Motion Data, Session Data, Lap Data */}
-        {sidebarItems.slice(1, 4).map((item, index) => (
+        {sidebarItems.slice(2, 5).map((item, index) => (
           <button
             key={index + 1}
             onClick={() => handleItemClick(item.label)}
@@ -135,7 +137,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         <div className="h-px bg-slate-200 my-4"></div>
 
         {/* Group 3: Events */}
-        {sidebarItems.slice(4, 5).map((item, index) => (
+        {sidebarItems.slice(5, 6).map((item, index) => (
           <button
             key={index + 4}
             onClick={() => handleItemClick(item.label)}
@@ -158,7 +160,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         <div className="h-px bg-slate-200 my-4"></div>
 
         {/* Group 4: Car Setups, Car Telemetry, Car Status, Car Damage */}
-        {sidebarItems.slice(5, 9).map((item, index) => (
+        {sidebarItems.slice(6, 10).map((item, index) => (
           <button
             key={index + 5}
             onClick={() => handleItemClick(item.label)}
@@ -181,7 +183,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         <div className="h-px bg-slate-200 my-4"></div>
 
         {/* Group 5: Participants, Lobby Info, Final Classification, Session History */}
-        {sidebarItems.slice(9, 13).map((item, index) => (
+        {sidebarItems.slice(10, 14).map((item, index) => (
           <button
             key={index + 9}
             onClick={() => handleItemClick(item.label)}

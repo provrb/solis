@@ -1,8 +1,8 @@
 import "./App.css";
-import Sidebar from "./Sidebar";
+import Sidebar from "../components/Sidebar";
 import ConnectionPanel from "./ConnectionPanel";
 import DataPanel from "./DataPanel";
-import TitleBar from "./TitleBar";
+import TitleBar from "../components/TitleBar";
 import { useState, useEffect } from "react";
 import {
   MonitorUp,
