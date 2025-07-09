@@ -1,9 +1,6 @@
-<div align="center" style="display: flex; align-items: center; justify-content: center; gap: 20px;">
-  <img src="src-tauri/icons/solis-128x128-2.png" style="filter: brightness(0) invert(1); height: 80px;">
-  <span style="font-weight: 600; font-size: 80px; line-height: 80px; margin: 0; text-decoration: none;">Solis</span>
-</div>
 
 <div style="max-width: 700px; margin: 20px auto; text-align: center;">
+  <h1>Solis</h1>
   <p><em>An AI-driven race engineer that interacts through natural conversation, analyzing real-time telemetry data to deliver precise insights and optimize race strategies for smarter on-track decisions.</em></p>
 
   <img alt="last-commit" src="https://img.shields.io/github/last-commit/provrb/solis?style=flat&logo=git&logoColor=white&color=0080ff" style="margin-right: 6px;">
