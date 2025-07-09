@@ -1,5 +1,5 @@
 
-<div style="max-width: 700px; margin: 20px auto; text-align: center;">
+<div align="center">
   <h1>Solis</h1>
   <p><em>An AI-driven race engineer that interacts through natural conversation, analyzing real-time telemetry data to deliver precise insights and optimize race strategies for smarter on-track decisions.</em></p>
 
