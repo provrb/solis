@@ -2,6 +2,8 @@
 /// Provided by CodeMaster
 use serde::{Deserialize, Serialize};
 
+/// Enum representing the packet type
+/// from `packet_id` field in the PacketHeader struct
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PacketType {
@@ -23,6 +25,8 @@ pub enum PacketType {
 }
 
 impl PacketType {
+    /// Convert the enum type to the corresponding
+    /// u8 as defined in CodeMasters PacketHeader documentation
     pub fn as_u8(&self) -> u8 {
         match self {
             PacketType::Motion => 0,
@@ -42,6 +46,8 @@ impl PacketType {
     }
 }
 
+/// Enum representing a team based on a u8
+/// from `team_id` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum TeamId {
@@ -103,6 +109,8 @@ pub enum TeamId {
     None = 255,
 }
 
+/// Enum representing a driver based on
+/// the `driver_id` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum DriverId {
@@ -236,6 +244,8 @@ pub enum DriverId {
     NetworkHuman = 255,
 }
 
+/// Enum representing an F1 track based on
+/// the `track_id` field in a packet
 #[repr(i8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum TrackId {
@@ -275,6 +285,8 @@ pub enum TrackId {
     Miami = 30,
 }
 
+/// Enum representing a nationality based on
+/// the `nationality` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default)]
 pub enum NationalityId {
@@ -370,6 +382,8 @@ pub enum NationalityId {
     None = 255,
 }
 
+/// Enum representing a game mode based on
+/// the `gameMode` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum GameModeId {
@@ -389,6 +403,8 @@ pub enum GameModeId {
     Benchmark = 127,
 }
 
+/// Enum representing a ruleset based on
+/// the `rule_set` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum RulesetId {
@@ -464,6 +480,9 @@ pub enum ButtonFlag {
 }
 
 impl ButtonFlag {
+    /// Represent a button flag as the corresponding
+    /// button name. For example, ButtonFlag::SquareorX corresponds to
+    /// the Square or X button on controller.
     pub fn as_str(&self) -> &'static str {
         match self {
             ButtonFlag::CrossorA => "Cross/A",
@@ -491,6 +510,8 @@ impl ButtonFlag {
     }
 }
 
+/// Enum representing a penalty based on
+/// the `penalty_type` field in a packet
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PenaltyType {
@@ -515,10 +536,10 @@ pub enum PenaltyType {
 }
 
 impl PenaltyType {
+    /// Represent a PenaltyType enum as a string
+    /// that flows with the sentence "xxx has received a _"
     pub fn as_str(&self) -> &'static str {
         match self {
-            // All should flow with the sentence
-            // xxx has received a _
             PenaltyType::DriveThrough => "Drive Through",
             PenaltyType::StopGo => "Stop Go Penalty",
             PenaltyType::GridPenalty => "Grid Penalty",
@@ -547,6 +568,8 @@ impl PenaltyType {
     }
 }
 
+/// Enum representing an infringement type based on
+/// the `infringement_type` field in a packet
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum InfringementType {
@@ -607,6 +630,8 @@ pub enum InfringementType {
     AttributeAssigned = 54,
 }
 
+/// Enum representing a session type based on
+/// the `session_type` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum SessionType {
@@ -628,6 +653,8 @@ pub enum SessionType {
     TimeTrial = 13,
 }
 
+/// Enum representing a state of weather based on
+/// the `weather` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum WeatherType {
@@ -641,6 +668,8 @@ pub enum WeatherType {
     Storm = 5,
 }
 
+/// Enum representing the formula mode based on
+/// the `formula` field in a packet. e.g: f1, f2, etc
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum FormulaType {
@@ -656,6 +685,8 @@ pub enum FormulaType {
     F22021 = 7,
 }
 
+/// Enum representing the length of a session based on
+/// the `session_length` field in a packet
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
 pub enum SessionLength {
@@ -670,6 +701,8 @@ pub enum SessionLength {
     Full = 7,
 }
 
+/// Enum representing an event based on
+/// the `id` field in PacketEventData
 #[repr(u8)]
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum EventId {

@@ -1,12 +1,14 @@
 use crate::bridge::DataRow;
 use crate::core::ids::PacketType;
 use crate::core::Session;
+use std::sync::LazyLock;
 use std::time::Duration;
 use std::{
     sync::{Arc, Mutex},
     thread,
 };
 use tauri::{AppHandle, Emitter, Error, Listener};
+use crate::audio::AudioInput;
 
 macro_rules! send_packet_to_buffer {
     ($buffer:expr, $packet_title:tt, $packet_broad:tt, $packet_specific:tt) => {{
@@ -27,6 +29,10 @@ macro_rules! send_packet_to_buffer {
         }
     }};
 }
+
+pub static AUDIO_INPUT_DATA: LazyLock<Mutex<AudioInput>> = LazyLock::new(|| {
+    Mutex::new(AudioInput::new())
+});
 
 #[tauri::command]
 pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Result<bool, Error> {
@@ -172,4 +178,18 @@ pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Resu
     thread::sleep(Duration::from_millis(100));
 
     Ok(true)
+}
+
+#[tauri::command]
+pub fn start_audio_recording() {
+    if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
+        audio.start_record_input();
+    }
+}
+
+#[tauri::command]
+pub fn stop_audio_recording() {
+    if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
+        audio.end_record_input();
+    }
 }
