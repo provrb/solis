@@ -22,6 +22,9 @@
 /// Stop go served       -   "SGSV"   -   Stop go penalty served
 /// Flashback            -   "FLBK"   -   Flashback activated
 /// Button status        -   "BUTN"   -   Button status changed
+/// 
+/// 'Code' is a 4 character code defined in CodeMasters' PacketEventData 
+/// to represent an event. See [`PacketEventData`](PacketEventData)
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
