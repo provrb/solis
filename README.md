@@ -13,9 +13,6 @@
 <details>
    <summary><b>Click to view app screenshots!</b></summary>
 
-   ![](/docs/home.png)
-   <p align="center"><em>Home Screen</em></p>
-
    ![](/docs/connect.png)
    <p align="center"><em>Connection Screen</em></p>
 
