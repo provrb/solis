@@ -1,3 +1,4 @@
+use crate::audio::AudioInput;
 use crate::bridge::DataRow;
 use crate::core::ids::PacketType;
 use crate::core::Session;
@@ -8,7 +9,6 @@ use std::{
     thread,
 };
 use tauri::{AppHandle, Emitter, Error, Listener};
-use crate::audio::AudioInput;
 
 macro_rules! send_packet_to_buffer {
     ($buffer:expr, $packet_title:tt, $packet_broad:tt, $packet_specific:tt) => {{
@@ -30,9 +30,8 @@ macro_rules! send_packet_to_buffer {
     }};
 }
 
-pub static AUDIO_INPUT_DATA: LazyLock<Mutex<AudioInput>> = LazyLock::new(|| {
-    Mutex::new(AudioInput::new())
-});
+pub static AUDIO_INPUT_DATA: LazyLock<Arc<Mutex<AudioInput>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(AudioInput::default())));
 
 #[tauri::command]
 pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Result<bool, Error> {
@@ -87,7 +86,7 @@ pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Resu
             break;
         }
 
-        let Ok(packet) = session_guard.get_latest_packet() else {
+        let Some(packet) = session_guard.get_latest_packet() else {
             continue;
         };
 
@@ -181,15 +180,22 @@ pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Resu
 }
 
 #[tauri::command]
-pub fn start_audio_recording() {
-    if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
-        audio.start_record_input();
-    }
+pub async fn start_audio_recording() {
+    let audio_arc = AUDIO_INPUT_DATA.clone();
+
+    thread::spawn(move || {
+        if let Ok(mut audio) = audio_arc.lock() {
+            audio.start_record_input();
+        }
+    });
 }
 
 #[tauri::command]
 pub fn stop_audio_recording() {
+    println!("Received request to stop audio recording.");
+
     if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
-        audio.end_record_input();
+        let audio_sample = audio.end_record_input();
+        audio.transcribe_audio(audio_sample);
     }
 }

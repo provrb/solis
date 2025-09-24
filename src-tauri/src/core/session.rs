@@ -189,11 +189,11 @@ impl Session {
     }
 
     /// Receive the latest F1 telemetry packet
-    pub fn get_latest_packet(&self) -> Result<TelemetryPacket, ()> {
+    pub fn get_latest_packet(&self) -> Option<TelemetryPacket> {
         let mut buf = [MaybeUninit::<u8>::uninit(); 2048];
         let socket = match &self.connection.socket {
             Some(s) => s,
-            None => return Err(()),
+            None => return None,
         };
 
         match socket.recv_from(&mut buf) {
@@ -203,12 +203,12 @@ impl Session {
                 };
                 let packet = match parse_packet(initialized) {
                     Some(packet) => packet,
-                    None => return Err(()),
+                    None => return None,
                 };
 
-                Ok(packet)
+                Some(packet)
             }
-            Err(_) => Err(()),
+            Err(_) => None,
         }
     }
 

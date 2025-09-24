@@ -19,6 +19,7 @@ import {
   NotepadText,
   GalleryVerticalEnd,
 } from "lucide-react";
+import AudioSettingsPanel from "./AudioPanel";
 
 function App() {
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -133,6 +134,10 @@ function App() {
 
   const renderMainContent = () => {
     switch (activePanel) {
+      case "Audio":
+        return (
+          <AudioSettingsPanel />
+        );
       case "Connection":
         return (
           <ConnectionPanel

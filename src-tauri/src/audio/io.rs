@@ -1,10 +1,13 @@
-use std::{ffi::CStr, sync::{Arc, Mutex}};
-use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 use cpal::{
-    traits::{DeviceTrait, HostTrait, StreamTrait}, Device, Host, InputCallbackInfo, Stream, SupportedStreamConfig
+    traits::{DeviceTrait, HostTrait, StreamTrait},
+    Device, Host, InputCallbackInfo, Stream, SupportedStreamConfig,
 };
+use rubato::{FftFixedIn, Resampler};
+use std::sync::{Arc, Mutex};
+use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
-static WHISPER_MODEL_PATH: &str = "models/ggml-base-q8_0.bin";
+static WHISPER_MODEL_PATH: &str =
+    "/home/ethan/Repos/solis/src-tauri/src/audio/models/ggml-base-q8_0.bin";
 
 pub struct AudioInput {
     pub whisper_context: WhisperContext,
@@ -14,30 +17,24 @@ pub struct AudioInput {
     pub audio_buffer: Arc<Mutex<Vec<f32>>>,
 
     /// Input stream config
-    pub stream_config: SupportedStreamConfig, 
+    pub stream_config: SupportedStreamConfig,
 }
 
-impl AudioInput {
-    pub fn new() -> Self {
-        let host = cpal::default_host();
-        
-        let model = match WhisperContext::new_with_params(
+impl Default for AudioInput {
+    fn default() -> Self {
+        let model = WhisperContext::new_with_params(
             WHISPER_MODEL_PATH,
             WhisperContextParameters::default(),
-        ) {
-            Ok(model) => model,
-            Err(e) => panic!("error creating whisper model: {e}"),
-        };
+        )
+        .expect("error creating whisper model");
 
-        let default_input_device = match host.default_input_device() {
-            Some(d) => d,
-            None => panic!("failed getting default audio input device"),
-        };
-        
-        let default_stream_config = match default_input_device.default_input_config() {
-            Ok(d) => d,
-            Err(e) => panic!("failed getting default stream config: {e}"),
-        };
+        let host = cpal::default_host();
+        let default_input_device = host
+            .default_input_device()
+            .expect("error getting default audio input device");
+        let default_stream_config = default_input_device
+            .default_input_config()
+            .expect("error getting default stream config");
 
         Self {
             whisper_context: model,
@@ -48,7 +45,9 @@ impl AudioInput {
             audio_buffer: Arc::new(Mutex::new(Vec::new())),
         }
     }
+}
 
+impl AudioInput {
     pub fn get_audio_input_devices() -> Vec<String> {
         let host = cpal::default_host();
         let Ok(input_devices) = host.input_devices() else {
@@ -57,8 +56,7 @@ impl AudioInput {
 
         input_devices
             .into_iter()
-            .filter(|device| device.name().is_ok())
-            .map(|device| device.name().unwrap())
+            .filter_map(|device| device.name().ok())
             .collect()
     }
 
@@ -70,28 +68,8 @@ impl AudioInput {
 
         output_devices
             .into_iter()
-            .filter(|device| device.name().is_ok())
-            .map(|device| device.name().unwrap())
+            .filter_map(|device| device.name().ok())
             .collect()
-    }
-
-    /// not mine
-    /// https://github.com/lmammino/whisper-rs-example/blob/main/src/main.rs
-    extern "C" fn whisper_on_segment(
-        _ctx: *mut whisper_rs_sys::whisper_context,
-        state: *mut whisper_rs_sys::whisper_state,
-        _n_new: std::os::raw::c_int,
-        _user_data: *mut std::os::raw::c_void,
-    ) {
-        let last_segment = unsafe { whisper_rs_sys::whisper_full_n_segments_from_state(state) } - 1;
-        let ret =
-            unsafe { whisper_rs_sys::whisper_full_get_segment_text_from_state(state, last_segment) };
-        if ret.is_null() {
-            panic!("Failed to get segment text")
-        }
-        let c_str = unsafe { CStr::from_ptr(ret) };
-        let r_str = c_str.to_str().expect("invalid segment text");
-        println!("-> Segment ({}) text: {}", last_segment, r_str)
     }
 
     fn create_input_stream(&mut self) {
@@ -100,15 +78,13 @@ impl AudioInput {
         let buffer_clone = Arc::clone(&self.audio_buffer);
 
         let input_stream = self.input_device.build_input_stream(
-            &config.into(),
+            &config,
             move |data: &[f32], _: &InputCallbackInfo| {
                 let mut buffer = buffer_clone.lock().unwrap();
                 buffer.extend_from_slice(data);
             },
-            move |err| {
-                eprintln!("input stream error, recording: {err}")
-            },
-            None
+            move |err| eprintln!("input stream error, recording: {err}"),
+            None,
         );
 
         match input_stream {
@@ -119,54 +95,73 @@ impl AudioInput {
 
     pub fn start_record_input(&mut self) {
         self.create_input_stream();
+        println!("Starting to recrding input. Stream created.");
 
         if let Some(stream) = &self.input_stream {
-            let _ = stream.play();
+            stream.play().unwrap();
         }
     }
 
-    pub fn end_record_input(&mut self) {
+    pub fn transcribe_audio(&self, audio_buffer: Vec<f32>) {
+        let mut state = self
+            .whisper_context
+            .create_state()
+            .expect("failed to create state");
+        let params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+        state
+            .full(params, &audio_buffer)
+            .expect("failed to run model");
+
+        let num_segments = state.full_n_segments();
+        for i in 0..num_segments {
+            let segment = state.get_segment(i).expect("failed to get segment {i}");
+            let text = segment
+                .to_str()
+                .expect("failed retrieving text from segment");
+            println!("Segment: {i}, {text}");
+        }
+    }
+
+    pub fn end_record_input(&mut self) -> Vec<f32> {
         if let Some(stream) = self.input_stream.take() {
-            // Dropping stream stops the recording
             drop(stream);
         }
 
-        let audio: Vec<f32> = {
-            let mut locked = self.audio_buffer.lock().unwrap();
-            let audio = locked.clone();
-            locked.clear();
-            audio
+        let recorded = self.audio_buffer.lock().unwrap().clone();
+        println!("Captured {} samples", recorded.len());
+
+        let channels = self.stream_config.channels() as usize;
+        let mono: Vec<f32> = if channels > 1 {
+            recorded
+                .chunks(channels)
+                .map(|frame| frame.iter().sum::<f32>() / channels as f32)
+                .collect()
+        } else {
+            recorded
         };
 
-        println!("# of audio samples: {}", audio.len());
+        let in_rate = self.stream_config.sample_rate().0 as usize;
+        const OUT_RATE: usize = 16000;
+        const CHUNK_SIZE: usize = 1024;
 
-        let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-        params.set_print_progress(true);
-        params.set_language(Some("en"));
-        unsafe {
-            params.set_new_segment_callback(Some(Self::whisper_on_segment)); // Static method
-        }
-        params.set_progress_callback_safe(|progress| println!("Progress: {}", progress));
-
-        let st = std::time::Instant::now();
-
-        let mut state = self.whisper_context.create_state().expect("failed to create state");
-
-        state.full(params, &audio[..]).expect("failed to run model");
-
-        let num_segments = state.full_n_segments().expect("failed to get number of segments");
-        for i in 0..num_segments {
-            let segment = state.full_get_segment_text(i).expect("failed to get segment");
-            let start_timestamp = state.full_get_segment_t0(i).expect("failed to get start");
-            let end_timestamp = state.full_get_segment_t1(i).expect("failed to get end");
-
-            println!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
+        let mut resampler = FftFixedIn::<f32>::new(in_rate, OUT_RATE, CHUNK_SIZE, 2, 1).unwrap();
+        let mut resampled_chunks = Vec::new();
+        for chunk in mono.chunks(CHUNK_SIZE) {
+            let mut padded = chunk.to_vec();
+            if padded.len() < CHUNK_SIZE {
+                padded.resize(CHUNK_SIZE, 0.0); // pad with silence
+            }
+            let processed = resampler.process(&[padded], None).unwrap();
+            resampled_chunks.extend(processed.concat());
         }
 
-        let et = std::time::Instant::now();
-        println!("-> Finished (took {}ms)", (et - st).as_millis());
+        println!(
+            "Resampled to {} Hz, {} samples",
+            OUT_RATE,
+            resampled_chunks.len()
+        );
+        resampled_chunks
     }
-
 
     fn get_audio_device_from_name(device_name: String) -> Option<Device> {
         let host = cpal::default_host();
