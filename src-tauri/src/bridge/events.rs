@@ -1,4 +1,5 @@
-use crate::bridge::DataRow;
+use crate::audio::AudioInput;
+use crate::bridge::{DataRow, TranscribeEvent};
 use crate::core::ids::PacketType;
 use crate::core::Session;
 use std::sync::LazyLock;
@@ -8,7 +9,6 @@ use std::{
     thread,
 };
 use tauri::{AppHandle, Emitter, Error, Listener};
-use crate::audio::AudioInput;
 
 macro_rules! send_packet_to_buffer {
     ($buffer:expr, $packet_title:tt, $packet_broad:tt, $packet_specific:tt) => {{
@@ -30,9 +30,18 @@ macro_rules! send_packet_to_buffer {
     }};
 }
 
-pub static AUDIO_INPUT_DATA: LazyLock<Mutex<AudioInput>> = LazyLock::new(|| {
-    Mutex::new(AudioInput::new())
-});
+pub static AUDIO_INPUT_DATA: LazyLock<Arc<Mutex<AudioInput>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(AudioInput::default())));
+
+#[tauri::command]
+pub fn get_input_devices() -> Vec<String> {
+    AudioInput::get_audio_input_devices()
+}
+
+#[tauri::command]
+pub fn get_output_devices() -> Vec<String> {
+    AudioInput::get_audio_output_devices()
+}
 
 #[tauri::command]
 pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Result<bool, Error> {
@@ -87,7 +96,7 @@ pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Resu
             break;
         }
 
-        let Ok(packet) = session_guard.get_latest_packet() else {
+        let Some(packet) = session_guard.get_latest_packet() else {
             continue;
         };
 
@@ -181,15 +190,51 @@ pub fn start_udp_listener(app: AppHandle, address: String, port: String) -> Resu
 }
 
 #[tauri::command]
-pub fn start_audio_recording() {
-    if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
-        audio.start_record_input();
-    }
+pub fn start_audio_recording(app: AppHandle) {
+    let audio_arc = AUDIO_INPUT_DATA.clone();
+    let app_arc = Arc::new(app);
+
+    thread::spawn(move || {
+        if let Ok(mut audio) = audio_arc.lock() {
+            audio.stream_audio_input(move |segment| {
+                println!("text: {}", segment.text);
+                let _ = app_arc.emit(
+                    "append-transcribed-text",
+                    TranscribeEvent {
+                        new_text: segment.text,
+                    },
+                );
+            });
+        }
+    });
 }
 
 #[tauri::command]
 pub fn stop_audio_recording() {
+    AudioInput::end_streaming_input();
+}
+
+#[tauri::command]
+pub fn set_input_device(device_name: String) {
+    AudioInput::end_streaming_input();
+
+    // AudioInput::end_streaming_input();
     if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
-        audio.end_record_input();
+        println!("setting input device to: {device_name}");
+        audio.set_input_device(device_name);
+    }
+}
+
+#[tauri::command]
+pub fn set_input_volume(new_volume: i8) {
+    if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
+        audio.set_input_volume(new_volume);
+    }
+}
+
+#[tauri::command]
+pub fn set_output_volume(new_volume: i8) {
+    if let Ok(mut audio) = AUDIO_INPUT_DATA.lock() {
+        audio.set_output_volume(new_volume);
     }
 }

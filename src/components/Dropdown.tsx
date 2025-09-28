@@ -65,10 +65,11 @@ function CustomDropdown({
                 onChange(option.value);
                 setIsOpen(false);
               }}
-              className={`w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors duration-150 font-montserrat ${option.value === value
+              className={`w-full px-3 py-2 text-left hover:bg-slate-50 transition-colors duration-150 font-montserrat ${
+                option.value === value
                   ? "bg-blue-50 text-blue-600"
                   : "text-slate-700"
-                }`}
+              }`}
             >
               {option.label}
             </button>
@@ -80,3 +81,4 @@ function CustomDropdown({
 }
 
 export default CustomDropdown;
+

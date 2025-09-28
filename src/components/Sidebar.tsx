@@ -13,7 +13,7 @@ import {
   GalleryVerticalEnd,
   Infinity,
   MonitorUp,
-  Headset
+  Headset,
 } from "lucide-react";
 
 interface SidebarItem {

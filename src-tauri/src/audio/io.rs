@@ -1,54 +1,76 @@
-use std::{ffi::CStr, sync::{Arc, Mutex}};
-use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 use cpal::{
-    traits::{DeviceTrait, HostTrait, StreamTrait}, Device, Host, InputCallbackInfo, Stream, SupportedStreamConfig
+    traits::{DeviceTrait, HostTrait, StreamTrait},
+    Device, Host, InputCallbackInfo, Stream, SupportedStreamConfig,
+};
+// use hound;
+use rubato::{FftFixedIn, Resampler};
+use std::collections::VecDeque;
+use std::fs;
+use std::sync::atomic::Ordering;
+use std::{
+    sync::{atomic::AtomicBool, Arc, LazyLock, Mutex},
+    thread,
+    time::Duration,
+};
+use whisper_rs::{
+    FullParams, SamplingStrategy, SegmentCallbackData, WhisperContext, WhisperContextParameters,
 };
 
-static WHISPER_MODEL_PATH: &str = "models/ggml-base-q8_0.bin";
-
+static WHISPER_MODEL_PATH: &str =
+    "/home/ethan/Repos/solis/src-tauri/src/audio/models/ggml-large-v3-turbo-q8_0.bin";
+static WHISPER_PROMPT_PATH: &str = "../audio/models/prompt.txt";
+pub static AUDIO_STREAMING_ACTIVE: LazyLock<AtomicBool> = LazyLock::new(|| AtomicBool::new(false));
 pub struct AudioInput {
     pub whisper_context: WhisperContext,
+    whisper_prompt: Option<String>,
     pub host_stream: Host,
     pub input_device: Device,
     pub input_stream: Option<Stream>,
     pub audio_buffer: Arc<Mutex<Vec<f32>>>,
 
+    /// IO Volume
+    /// Value between 0-100. When increasing the volume
+    /// will be divided by 100 to get a 'gain factor.'
+    /// When the audio samples are processed by CPAL, the
+    /// will be multipled by the 'gain factor.'
+    pub input_volume: i8,
+    pub output_volume: i8,
+
     /// Input stream config
-    pub stream_config: SupportedStreamConfig, 
+    pub stream_config: SupportedStreamConfig,
 }
 
-impl AudioInput {
-    pub fn new() -> Self {
-        let host = cpal::default_host();
-        
-        let model = match WhisperContext::new_with_params(
+impl Default for AudioInput {
+    fn default() -> Self {
+        let model = WhisperContext::new_with_params(
             WHISPER_MODEL_PATH,
             WhisperContextParameters::default(),
-        ) {
-            Ok(model) => model,
-            Err(e) => panic!("error creating whisper model: {e}"),
-        };
+        )
+        .expect("error creating whisper medel");
 
-        let default_input_device = match host.default_input_device() {
-            Some(d) => d,
-            None => panic!("failed getting default audio input device"),
-        };
-        
-        let default_stream_config = match default_input_device.default_input_config() {
-            Ok(d) => d,
-            Err(e) => panic!("failed getting default stream config: {e}"),
-        };
+        let host = cpal::default_host();
+        let default_input_device = host
+            .default_input_device()
+            .expect("error getting default audio input device");
+        let default_stream_config = default_input_device
+            .default_input_config()
+            .expect("error getting default stream config");
 
         Self {
             whisper_context: model,
+            whisper_prompt: Self::get_whisper_initial_prompt(),
             input_device: default_input_device,
             stream_config: default_stream_config,
             host_stream: host,
+            input_volume: 100,
+            output_volume: 100,
             input_stream: None,
             audio_buffer: Arc::new(Mutex::new(Vec::new())),
         }
     }
+}
 
+impl AudioInput {
     pub fn get_audio_input_devices() -> Vec<String> {
         let host = cpal::default_host();
         let Ok(input_devices) = host.input_devices() else {
@@ -57,8 +79,7 @@ impl AudioInput {
 
         input_devices
             .into_iter()
-            .filter(|device| device.name().is_ok())
-            .map(|device| device.name().unwrap())
+            .filter_map(|device| device.name().ok())
             .collect()
     }
 
@@ -70,45 +91,49 @@ impl AudioInput {
 
         output_devices
             .into_iter()
-            .filter(|device| device.name().is_ok())
-            .map(|device| device.name().unwrap())
+            .filter_map(|device| device.name().ok())
             .collect()
     }
 
-    /// not mine
-    /// https://github.com/lmammino/whisper-rs-example/blob/main/src/main.rs
-    extern "C" fn whisper_on_segment(
-        _ctx: *mut whisper_rs_sys::whisper_context,
-        state: *mut whisper_rs_sys::whisper_state,
-        _n_new: std::os::raw::c_int,
-        _user_data: *mut std::os::raw::c_void,
-    ) {
-        let last_segment = unsafe { whisper_rs_sys::whisper_full_n_segments_from_state(state) } - 1;
-        let ret =
-            unsafe { whisper_rs_sys::whisper_full_get_segment_text_from_state(state, last_segment) };
-        if ret.is_null() {
-            panic!("Failed to get segment text")
+    pub fn get_whisper_initial_prompt() -> Option<String> {
+        fs::read_to_string(WHISPER_PROMPT_PATH).ok()
+    }
+
+    pub fn is_streaming_audio() -> bool {
+        AUDIO_STREAMING_ACTIVE.load(Ordering::Relaxed)
+    }
+
+    pub fn set_output_volume(&mut self, new_volume: i8) {
+        println!("setting output volume: {new_volume}");
+        self.output_volume = new_volume;
+    }
+
+    pub fn set_input_volume(&mut self, new_volume: i8) {
+        println!("setting output volume: {new_volume}");
+
+        self.input_volume = new_volume;
+    }
+
+    pub fn set_input_device(&mut self, device_name: String) {
+        if let Some(audio_device) = Self::get_audio_device_from_name(device_name) {
+            self.input_device = audio_device;
         }
-        let c_str = unsafe { CStr::from_ptr(ret) };
-        let r_str = c_str.to_str().expect("invalid segment text");
-        println!("-> Segment ({}) text: {}", last_segment, r_str)
     }
 
     fn create_input_stream(&mut self) {
-        let config = self.stream_config.config();
         self.audio_buffer = Arc::new(Mutex::new(Vec::new()));
-        let buffer_clone = Arc::clone(&self.audio_buffer);
 
+        let config = self.stream_config.config();
+        let buffer_clone = Arc::clone(&self.audio_buffer);
+        let input_volume = self.input_volume as f32 / 100.0;
         let input_stream = self.input_device.build_input_stream(
-            &config.into(),
+            &config,
             move |data: &[f32], _: &InputCallbackInfo| {
                 let mut buffer = buffer_clone.lock().unwrap();
-                buffer.extend_from_slice(data);
+                buffer.extend(data.iter().map(|sample| sample * input_volume));
             },
-            move |err| {
-                eprintln!("input stream error, recording: {err}")
-            },
-            None
+            move |err| eprintln!("input stream error, recording: {err}"),
+            None,
         );
 
         match input_stream {
@@ -117,56 +142,146 @@ impl AudioInput {
         }
     }
 
-    pub fn start_record_input(&mut self) {
+    pub fn stream_audio_input<F>(&mut self, stream_callback: F)
+    where
+        F: FnMut(SegmentCallbackData) + Send + 'static,
+    {
         self.create_input_stream();
+        AUDIO_STREAMING_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
 
         if let Some(stream) = &self.input_stream {
-            let _ = stream.play();
+            stream.play().unwrap(); // start recording
+        }
+
+        let mut state = self.whisper_context.create_state().unwrap();
+        let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+        params.set_no_timestamps(true);
+        params.set_no_context(true);
+        params.set_segment_callback_safe(stream_callback);
+
+        if let Some(initial_prompt) = &self.whisper_prompt {
+            params.set_initial_prompt(initial_prompt);
+        }
+
+        let audio_buffer = Arc::clone(&self.audio_buffer);
+        let mut last_pos = 0;
+
+        let mut audio_queue: VecDeque<f32> = VecDeque::new();
+        let max_queue_size = 16_000 * 30;
+
+        while AUDIO_STREAMING_ACTIVE.load(Ordering::Relaxed) {
+            if let Ok(buffer) = audio_buffer.try_lock() {
+                for &sample in buffer[last_pos..].iter() {
+                    audio_queue.push_back(sample);
+                }
+                last_pos = buffer.len();
+            }
+
+            while audio_queue.len() > max_queue_size {
+                audio_queue.pop_front();
+            }
+
+            let chunk: Vec<f32> = audio_queue.iter().copied().collect();
+            if chunk.is_empty() {
+                thread::sleep(Duration::from_millis(10));
+                continue;
+            }
+            let formatted = self.format_audio_samples(&chunk);
+
+            if formatted.len() >= 16_000 * 2 {
+                if !formatted.is_empty() && formatted.iter().any(|s| s.abs() > 0.05) {
+                    state.full(params.clone(), &formatted).unwrap();
+                }
+
+                let overlap_samples = 16_000 / 4;
+                let keep_samples = if audio_queue.len() > overlap_samples {
+                    audio_queue.split_off(audio_queue.len() - overlap_samples)
+                } else {
+                    VecDeque::new()
+                };
+                audio_queue = keep_samples;
+            }
+
+            thread::sleep(Duration::from_millis(10));
         }
     }
 
-    pub fn end_record_input(&mut self) {
+    pub fn end_streaming_input() {
+        AUDIO_STREAMING_ACTIVE.store(false, Ordering::Relaxed);
+    }
+
+    pub fn transcribe_audio(&self, audio_buffer: Vec<f32>, params: Option<FullParams>) {
+        let mut state = self
+            .whisper_context
+            .create_state()
+            .expect("failed to create state");
+        let params = if let Some(p) = params {
+            p
+        } else {
+            FullParams::new(SamplingStrategy::Greedy { best_of: 1 })
+        };
+
+        state
+            .full(params, &audio_buffer)
+            .expect("failed to run model");
+
+        let num_segments = state.full_n_segments();
+        for i in 0..num_segments {
+            let segment = state.get_segment(i).expect("failed to get segment {i}");
+            let text = segment
+                .to_str()
+                .expect("failed retrieving text from segment");
+            println!("Segment: {i}, {text}");
+        }
+    }
+
+    fn format_audio_samples(&self, audio_buffer: &[f32]) -> Vec<f32> {
+        let channels = self.stream_config.channels() as usize;
+        let mono: Vec<f32> = if channels > 1 {
+            audio_buffer
+                .chunks(channels)
+                .map(|frame| frame.iter().sum::<f32>() / channels as f32)
+                .collect()
+        } else {
+            audio_buffer.to_vec()
+        };
+
+        let in_rate = self.stream_config.sample_rate().0 as usize;
+        const OUT_RATE: usize = 16000;
+        const CHUNK_SIZE: usize = 1024;
+
+        let mut resampler = FftFixedIn::<f32>::new(in_rate, OUT_RATE, CHUNK_SIZE, 2, 1).unwrap();
+        let mut resampled_chunks = Vec::new();
+        for chunk in mono.chunks(CHUNK_SIZE) {
+            let mut padded = chunk.to_vec();
+            if padded.len() < CHUNK_SIZE {
+                padded.resize(CHUNK_SIZE, 0.0); // pad with silence
+            }
+            let processed = resampler.process(&[padded], None).unwrap();
+            resampled_chunks.extend(processed.concat());
+        }
+
+        resampled_chunks
+    }
+
+    pub fn start_record_input(&mut self) {
+        self.create_input_stream();
+        println!("Starting to recrding input. Stream created.");
+
+        if let Some(stream) = &self.input_stream {
+            stream.play().unwrap();
+        }
+    }
+
+    pub fn end_record_input(&mut self) -> Vec<f32> {
         if let Some(stream) = self.input_stream.take() {
-            // Dropping stream stops the recording
             drop(stream);
         }
 
-        let audio: Vec<f32> = {
-            let mut locked = self.audio_buffer.lock().unwrap();
-            let audio = locked.clone();
-            locked.clear();
-            audio
-        };
-
-        println!("# of audio samples: {}", audio.len());
-
-        let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-        params.set_print_progress(true);
-        params.set_language(Some("en"));
-        unsafe {
-            params.set_new_segment_callback(Some(Self::whisper_on_segment)); // Static method
-        }
-        params.set_progress_callback_safe(|progress| println!("Progress: {}", progress));
-
-        let st = std::time::Instant::now();
-
-        let mut state = self.whisper_context.create_state().expect("failed to create state");
-
-        state.full(params, &audio[..]).expect("failed to run model");
-
-        let num_segments = state.full_n_segments().expect("failed to get number of segments");
-        for i in 0..num_segments {
-            let segment = state.full_get_segment_text(i).expect("failed to get segment");
-            let start_timestamp = state.full_get_segment_t0(i).expect("failed to get start");
-            let end_timestamp = state.full_get_segment_t1(i).expect("failed to get end");
-
-            println!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
-        }
-
-        let et = std::time::Instant::now();
-        println!("-> Finished (took {}ms)", (et - st).as_millis());
+        let recorded = self.audio_buffer.lock().unwrap().clone();
+        println!("Captured {} samples", recorded.len());
+        self.format_audio_samples(&recorded)
     }
-
 
     fn get_audio_device_from_name(device_name: String) -> Option<Device> {
         let host = cpal::default_host();

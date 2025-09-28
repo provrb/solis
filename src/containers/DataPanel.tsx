@@ -7,6 +7,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
+import Header from "../components/Header";
 
 interface DataRow {
   id: string;
@@ -30,6 +31,8 @@ interface DataPanelProps {
 // Function to get subtitle based on panel type
 const getSubtitle = (title: string): string => {
   switch (title) {
+    case "Audio":
+      return "Configure audio input/output settings";
     case "Motion Data":
       return "Real-time physics data for all vehicles in the session";
     case "Session Data":
@@ -164,15 +167,10 @@ export default function DataPanel({
   };
 
   return (
-    <div className="h-full bg-slate-50">
+    <div className="h-full bg-slate-50 overflow-y-auto">
       {/* Header */}
-      <div className="px-6 pt-6 pb-3">
-        <h1 className="text-2xl font-bold text-black font-montserrat">
-          {title}
-        </h1>
-        <p className="text-slate-600 font-montserrat mt-1">
-          {getSubtitle(title)}
-        </p>
+      <div>
+        <Header title={title} subtitle={getSubtitle(title)} />
       </div>
 
       {/* Data List */}

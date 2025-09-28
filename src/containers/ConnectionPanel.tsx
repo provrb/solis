@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { emit } from "@tauri-apps/api/event";
 import CustomDropdown from "../components/Dropdown";
+import Header from "../components/Header";
 
 interface ConnectionPanelProps {
   isConnected: boolean;
@@ -47,17 +48,17 @@ function ConnectionPanel({
   };
 
   return (
-    <div className="h-full bg-slate-50">
+    <div className="h-full bg-slate-50 overflow-y-auto">
       {/* Header */}
-      <div className="px-6 pt-6 pb-3">
-        <h1 className="text-2xl font-bold text-black font-montserrat">
-          Connection Settings
-        </h1>
-        <p className="text-md font-medium text-slate-700 font-montserrat mt-0">
-          {isConnected
-            ? "Connected to UDP Server"
-            : "No connection established"}
-        </p>
+      <div>
+        <Header
+          title="Connection Settings"
+          subtitle={
+            isConnected
+              ? "Connected to UDP Server"
+              : "No connection established"
+          }
+        />
       </div>
 
       {/* Content */}
@@ -114,10 +115,11 @@ function ConnectionPanel({
           <button
             onClick={handleConnect}
             disabled={isConnected || connecting}
-            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${isConnected || connecting
+            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${
+              isConnected || connecting
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-black text-white hover:bg-gray-800"
-              }`}
+            }`}
           >
             Connect
           </button>
@@ -125,10 +127,11 @@ function ConnectionPanel({
           <button
             onClick={handleDisconnect}
             disabled={!isConnected || connecting}
-            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${!isConnected || connecting
+            className={`py-2 px-12 rounded-md transition-colors duration-200 font-medium font-montserrat ${
+              !isConnected || connecting
                 ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                 : "bg-black text-white hover:bg-gray-800"
-              }`}
+            }`}
           >
             Disconnect
           </button>

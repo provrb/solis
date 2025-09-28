@@ -11,3 +11,8 @@ struct DataRow {
     packet_id: String,
     raw_data: String,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+struct TranscribeEvent {
+    new_text: String,
+}

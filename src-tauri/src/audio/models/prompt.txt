@@ -1,0 +1,48 @@
+Engineer: Box, box, box. Pit entry this lap.  
+Driver: Copy, box this lap. Medium tyres.  
+Engineer: Confirm strat five. Full push until sector two.  
+Driver: Understood. Engine mode seven. ERS deploy.  
+Engineer: DRS enabled on the main straight. Use overtake button when available.  
+Driver: Copy. Tyres overheating in sector three.  
+Engineer: Lift and coast turn twelve. Save fuel.  
+Driver: Confirmed. Brake balance forward two clicks.  
+Engineer: Yellow flag turn eight. Maintain delta plus point three.  
+Driver: Copy. Holding delta.  
+Engineer: Virtual Safety Car ending. Keep positive on the delta.  
+Driver: Understood. Ready for green flag.  
+Engineer: Push now. Target lap time one thirty point five.  
+Driver: Copy. Oversteer in sector one, understeer in sector two.  
+Engineer: We see that. Adjust differential mid corner.  
+Driver: Confirmed. Clear air ahead. Keep pushing.  
+Engineer: Traffic behind, Russell closing within DRS range.  
+Driver: Copy. Defensive mode.  
+Engineer: Box this lap for hard tyres. Pit limiter on at entry.  
+Driver: Copy, box this lap, pit limiter ready.  
+Engineer: Pit stop confirmed. Front wing adjustment minus one.  
+Driver: Copy, front wing minus one.  
+Engineer: Safety Car deployed. Delta negative point five.  
+Driver: Copy, delta minus point five.  
+Engineer: Green flag. Full push. Manage tyres to the end.  
+Driver: Confirmed. Push now, soft tyres good.  
+Engineer: Perez lap time one thirty point four. You are plus point two.  
+Driver: Copy, I can find time in sector three.  
+Engineer: Cool the brakes before turn twelve.  
+Driver: Understood. Engine overheating, need airflow.  
+Engineer: Copy. Adjust brake magic, suspension setting two.  
+Driver: Confirmed.  
+
+Tyre Compounds: soft tyres, medium tyres, hard tyres, wet tyres, intermediate tyres.  
+Pit Instructions: box, pit stop, pit entry, pit lane, pit limiter, release, unsafe release, pit confirm.  
+Performance Instructions: push, lift and coast, cool the brakes, save fuel, manage tyres, full push, deploy energy, recharge battery, maintain pace, engine mode, energy deployment.  
+Race Conditions: safety car, virtual safety car, yellow flag, double yellow flag, green flag, red flag, track limits, formation lap, rolling start, standing start, chequered flag, black and white flag, blue flag.  
+Car Behaviour: oversteer in sector, understeer in sector, lock-up, spin, snap of oversteer, slide, engine overheating, brake balance, clipping, tyre degradation, graining, blistering.  
+Numbers and Timing: delta plus point one, delta plus point three, delta minus point five, delta negative one point zero, sector one, sector two, sector three, lap time, lap number, turn one, turn two, turn twelve, turn fifteen, interval, gap ahead, gap behind.  
+Systems: ERS deploy, ERS recharge, DRS enabled, DRS disabled, overtake button, hybrid system, battery state, harvest mode, power unit, traction control, brake magic, torque map.  
+Setup and Balance: front wing, rear wing, differential, suspension, downforce, ride height, brake bias, engine braking, traction, aero balance, suspension stiffness, ride settings.  
+Driver Phrases: copy, understood, confirmed, keep pushing, maintain delta, overtaking, defending, traffic ahead, clear air, tyre warm-up, fuel saving, strategy call, lap time reference.  
+
+Driver Names: Max Verstappen, Charles Leclerc, Lewis Hamilton, George Russell, Lando Norris, Oscar Piastri, Carlos Sainz, Fernando Alonso, Sergio Perez, Pierre Gasly, Esteban Ocon, Valtteri Bottas, Nico Hulkenberg, Kevin Magnussen, Lance Stroll, Alex Albon, Yuki Tsunoda, Daniel Ricciardo, Liam Lawson, Guanyu Zhou, Jack Doohan, Frederik Vesti, Logan Sargeant, Dennis Hauger, Théo Pourchaire, Victor Martins, Roman Staněk, Oliver Bearman, Rafael Villagómez, Zak O’Sullivan, Christian Mansell, Isack Hadjar.  
+
+Team Names: Red Bull Racing, Ferrari, Mercedes, McLaren, Alpine, Aston Martin, Alfa Romeo, AlphaTauri, Haas, Williams, Sauber, BMW Sauber, Lotus, Renault, Toro Rosso, Jaguar, Benetton, Arrows, Jordan, BAR, Prost, Tyrrell, Minardi, HRT, Super Aguri.  
+
+Circuit Names and Corner References: Silverstone, Spa-Francorchamps, Monaco, Monza, Suzuka, Interlagos, Bahrain, Melbourne, Abu Dhabi, Austin, Barcelona, Montreal, Zandvoort, Imola, Paul Ricard, Hockenheim, Shanghai, Singapore, Baku, Miami, Losail, Jeddah, Portimao, Sochi, Budapest, Sepang, Yas Marina, Copse, Maggots, Becketts, Chapel, Stowe, Vale, Club, Abbey, Brooklands, Luffield, Woodcote, Eau Rouge, Raidillon, Les Combes, Pouhon, Bus Stop chicane, Parabolica, Variante Ascari, Rettifilo chicane, Curva Grande, Swimming Pool, Rascasse, Loews hairpin, Spoon curve, 130R, Degner one, Degner two, Casio Triangle, Turn eight Istanbul, Wall of Champions.  
