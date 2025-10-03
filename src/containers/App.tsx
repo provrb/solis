@@ -20,6 +20,7 @@ import {
   GalleryVerticalEnd,
 } from "lucide-react";
 import AudioSettingsPanel from "./AudioPanel";
+import EngineerPanel from "./EngineerPanel";
 
 function App() {
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -135,9 +136,7 @@ function App() {
   const renderMainContent = () => {
     switch (activePanel) {
       case "Audio":
-        return (
-          <AudioSettingsPanel />
-        );
+        return <AudioSettingsPanel />;
       case "Connection":
         return (
           <ConnectionPanel
@@ -145,6 +144,8 @@ function App() {
             setIsConnected={setIsConnected}
           />
         );
+      case "Race Engineer":
+        return <EngineerPanel />;
       case "Motion Data":
       case "Session Data":
       case "Lap Data":

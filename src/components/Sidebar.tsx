@@ -14,6 +14,7 @@ import {
   Infinity,
   MonitorUp,
   Headset,
+  Bot,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -37,6 +38,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
   const sidebarItems: SidebarItem[] = [
     { icon: <MonitorUp size={20} />, label: "Connection" },
     { icon: <Headset size={20} />, label: "Audio" },
+    { icon: <Bot size={20} />, label: "Race Engineer" },
     { icon: <Move3d size={20} />, label: "Motion Data" },
     { icon: <Clock size={20} />, label: "Session Data" },
     { icon: <Infinity size={20} />, label: "Lap Data" },
@@ -90,7 +92,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         className="flex-1 px-4 pt-4 pb-12 space-y-2 overflow-y-auto scrollbar-hide relative"
         style={{ scrollBehavior: "smooth" }}
       >
-        {/* Group 1: Connection */}
+        {/* Group 1: Connection, Audio*/}
         {sidebarItems.slice(0, 2).map((item, index) => (
           <button
             key={index}
@@ -113,8 +115,31 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         {/* Separator */}
         <div className="h-px bg-slate-200 my-4"></div>
 
+        {/* Engineer Panel */}
+        {sidebarItems.slice(2, 3).map((item, index) => (
+          <button
+            key={index + 1}
+            onClick={() => handleItemClick(item.label)}
+            className={`w-full flex items-center space-x-3 pl-2 pr-4 py-2.5 rounded-lg transition-all duration-200 group min-w-0 ${item.active ? "text-slate-900" : ""}`}
+          >
+            <div
+              className={`transition-colors duration-200 flex-shrink-0 ${item.active ? "text-slate-900" : "text-slate-400 group-hover:text-slate-600"}`}
+            >
+              {item.icon}
+            </div>
+            <span
+              className={`font-medium transition-colors duration-200 text-sm truncate ${item.active ? "text-slate-900" : "text-slate-500 group-hover:text-slate-700"}`}
+            >
+              {item.label}
+            </span>
+          </button>
+        ))}
+
+        {/* Separator */}
+        <div className="h-px bg-slate-200 my-4"></div>
+
         {/* Group 2: Motion Data, Session Data, Lap Data */}
-        {sidebarItems.slice(2, 5).map((item, index) => (
+        {sidebarItems.slice(3, 6).map((item, index) => (
           <button
             key={index + 1}
             onClick={() => handleItemClick(item.label)}
@@ -137,7 +162,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         <div className="h-px bg-slate-200 my-4"></div>
 
         {/* Group 3: Events */}
-        {sidebarItems.slice(5, 6).map((item, index) => (
+        {sidebarItems.slice(6, 7).map((item, index) => (
           <button
             key={index + 4}
             onClick={() => handleItemClick(item.label)}
@@ -160,7 +185,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         <div className="h-px bg-slate-200 my-4"></div>
 
         {/* Group 4: Car Setups, Car Telemetry, Car Status, Car Damage */}
-        {sidebarItems.slice(6, 10).map((item, index) => (
+        {sidebarItems.slice(7, 11).map((item, index) => (
           <button
             key={index + 5}
             onClick={() => handleItemClick(item.label)}
@@ -183,7 +208,7 @@ function Sidebar({ onItemClick, activePanel }: SidebarProps) {
         <div className="h-px bg-slate-200 my-4"></div>
 
         {/* Group 5: Participants, Lobby Info, Final Classification, Session History */}
-        {sidebarItems.slice(10, 14).map((item, index) => (
+        {sidebarItems.slice(11, 15).map((item, index) => (
           <button
             key={index + 9}
             onClick={() => handleItemClick(item.label)}

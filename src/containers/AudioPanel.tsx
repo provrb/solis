@@ -9,7 +9,7 @@ import type { Event as TauriEvent } from "@tauri-apps/api/event";
 
 // events
 type TranscribeEvent = {
-  newText: string;
+  new_text: string;
 };
 
 function AudioSettingsPanel() {
@@ -133,8 +133,9 @@ function AudioSettingsPanel() {
     const unlisten = webviewWindow.listen(
       "append-transcribed-text",
       (event: TauriEvent<TranscribeEvent>) => {
+        console.log("received event", event);
         if (transcribeBox) {
-          transcribeBox.textContent += event.payload.newText;
+          transcribeBox.textContent += event.payload.new_text;
         }
       },
     );

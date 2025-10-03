@@ -1,10 +1,15 @@
 pub mod audio;
 pub mod bridge;
 pub mod core;
+pub mod strategy;
 
-use crate::bridge::events::{
-    get_input_devices, get_output_devices, set_input_device, set_input_volume, set_output_volume,
-    start_audio_recording, start_udp_listener, stop_audio_recording,
+use crate::{
+    bridge::events::{
+        get_input_devices, get_output_devices, set_input_device, set_input_volume,
+        set_output_volume, start_audio_recording, start_udp_listener, stop_audio_recording,
+    },
+    core::TelemetryPacket,
+    strategy::{answer_question, init},
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
