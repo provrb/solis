@@ -1,3 +1,4 @@
+**NOTE: THIS PROJECT IS STILL A HEAVY WIP AND IS COMPLETE**
 
 <div align="center">
   <h1>Solis</h1>
